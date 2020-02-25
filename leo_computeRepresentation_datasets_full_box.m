@@ -27,24 +27,15 @@ netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
 load( sprintf('%s%s.mat', paths.ourCNNs, netID), 'net' );
 net= relja_simplenn_tidy(net);
 %j = 3601;
-db_featss = [];
 for i = 1:size(images)
-          
-    file_name = strcat(paths.dsetRootPitts,"/",images(i)); 
-    mat_name = strrep(images(i),'.jpg','.mat');
-    Mat_file = strcat(mat_paths,"/",mat_name); 
-    filemat_name = strcat('/mnt/1E48BE700AFD16C7/datasets/output-files/db','/',mat_name);
+    add_missing_file = '000/000414_pitch1_yaw10.jpg';
 
-    if exist(char(filemat_name), 'file')
-        query_db = load(char(filemat_name));
-        db_feats = single(query_db.feats(:,1:10));
-        db_featss = [db_featss db_feats];
-        fprintf( '  ==>> %i/%i',i,length(images));
-    else
-        % File does not exist.
-        warningMessage = sprintf('Warning: file does not exist:\n%s', char(filemat_name));
+    if strcmp(images(i), add_missing_file) == 1
+        file_name = strcat(paths.dsetRootPitts,"/",images(i)); 
+        mat_name = strrep(images(i),'.jpg','.mat');
         
 
+        Mat_file = strcat(mat_paths,"/",mat_name); 
         aq = load(Mat_file);
 
         im= vl_imreadjpeg({convertStringsToChars(file_name)}); 
@@ -59,15 +50,14 @@ for i = 1:size(images)
         im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
         feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
     
-      
+        filemat_name = strcat('/mnt/1E48BE700AFD16C7/datasets/output-files/db','/',mat_name);
         [folder, baseFileName, extension] = fileparts(char(filemat_name));
         if exist(folder, 'dir')==0
             mkdir(char(folder))
-    end
+        end
 
-        %save(char(filemat_name),'feats');
-        
-        
+        save(char(filemat_name),'feats');
+    
         clear feats;
         clear im;
         clear aq;
@@ -84,7 +74,6 @@ for i = 1:size(images)
         fprintf( '==>> %i/%i ~ %% %f ',i,length(images), i/length(images)*100);
         fclose(fileID);
     end
-    
 %   #if (i-j) == 500
 %
  %       j = i;
@@ -92,9 +81,6 @@ for i = 1:size(images)
    %     res_b = { struct('feat', cell(4096,50))}; 
    % end 
 end
-save(char('/mnt/0287D1936157598A/docker_ws/docker_ws/netvlad/netvlad-orignal/pitts_db_featss_1_10.mat'),'db_featss');
-
-
 
 clear images;
 images = db.qImageFns;
