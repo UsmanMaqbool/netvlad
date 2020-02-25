@@ -8,15 +8,23 @@ addpath(genpath('/mnt/0287D1936157598A/docker_ws/docker_ws/netvlad/leo-netvlad')
 
 setup;
 
-mat_paths = '/mnt/1E48BE700AFD16C7/datasets/Pittsburgh_Viewtag_1_mat';
 
 paths= localPaths();
+
+%%
+
+db = dbTokyo247();
+
+images_q = db.qImageFns;
+images_paths = paths.dsetRootTokyo247;
+
+
 
 db= dbPitts('30k', 'test');
 images = db.dbImageFns;
 %images = db.qImageFns;
 
-netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
+%netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
 
 % make two bin files for all
 
@@ -39,6 +47,14 @@ for i = 1:size(images)
         aq = load(Mat_file);
 
         im= vl_imreadjpeg({convertStringsToChars(file_name)}); 
+
+        
+
+
+
+
+
+
         mat_boxes = uint8(aq.bboxes/16); % to preserve the spatial information
         %size(mat_boxes)
         while (size(mat_boxes) < 50)
@@ -134,4 +150,133 @@ for i = 1:size(images)
   %      res_b = [];
    %     res_b = { struct('feat', cell(4096,50))}; 
    % end 
+end
+
+
+clc;
+clear all;
+addpath(genpath('/home/leo/docker_ws/pdollar-edges-folder-processing-matlab'));
+
+% 1 Channel Merged all (simplex)                | Viewtag_1_e 
+% 3 channel Level Edges Alone                   | Viewtag_3_e 
+% 3 Channel Rrr-ggg-bbb (without normalization)   | Viewtag_3_rbg 
+% 3 Channel rrr-ggg-bbb -> Edges-> normalization  | Viewtag_3_rgb_n
+
+
+%% load pre-trained edge detection model and set opts (see edgesDemo.m)
+
+model=load('models/forest/modelBsds'); model=model.model;
+model.opts.multiscale=0; model.opts.sharpen=2; model.opts.nThreads=4;
+
+%% set up opts for edgeBoxes (see edgeBoxes.m)
+opts = edgeBoxes;
+opts.alpha = .85;     % step size of sliding window search0.65
+opts.beta  = .8;     % nms threshold for object proposals0.75
+opts.minScore = .01;  % min score of boxes to detect
+opts.maxBoxes = 200;  % max number of boxes to detect 1e4
+
+%%
+
+
+Dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/dataset/query';
+
+addpath(genpath(Dataset_path));
+
+Save_path_1_e ='/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt';
+
+
+
+all_images = load('/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/qTokyoTMImageFns.mat');
+images = all_images.aa{1,1};
+
+
+
+
+tElapsed = zeros(10,1);
+time_i = 1;
+
+bboxes_1000 = struct;
+jj = 0;
+
+for i = 1:size(images)
+          
+    file_name = strcat(Dataset_path,"/",images(i)); 
+    save_edge = strcat(Save_path_1_e,"/",images(i)); 
+
+      tStart = tic; 
+  
+    %% Read and Process Image
+    
+    
+    
+    I = imread(char(file_name));
+    [bboxes, E] =edgeBoxes(I,model);
+    results = uint8(E * 255);
+    bboxes_1000 = bboxes;
+    %if i-jj == 5
+   % filemat_name = strcat('/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/','q','_',jj,'_',i,'.mat');
+   % save(filemat_name,'bboxes_1000');
+   % bboxes_1000 = [];
+
+    %end    
+%% Create View Tags
+    
+% Create Edge VT
+   e8u_norml_values = norml_values_strict(E,1,0,1);     % (xx,max_value,min1,max1)
+
+   e8u_c1 = e8u_norml_values;
+   e8u_c1(e8u_c1>.33)  = 0;
+   e8u_c1 = norml_values_strict(e8u_c1,1,0,0.33);
+
+   e8u_c2 = e8u_norml_values;
+   e8u_c2(e8u_c2<.33)  = 0;
+   e8u_c2(e8u_c2>.66)  = 0;
+   e8u_c2 = norml_values_strict(e8u_c2,1,0.33,0.66);
+
+   e8u_c3 = e8u_norml_values;
+   e8u_c3(e8u_c3<.66)  = 0;
+   e8u_c3 = norml_values_strict(e8u_c3,1,.66,1);
+
+   c1_mat_255 = uint8(e8u_c1* 255);
+   c2_mat_255 = uint8(e8u_c2* 255);
+   c3_mat_255 = uint8(e8u_c3* 255);
+    
+    
+
+   mat_255 = c1_mat_255+c2_mat_255+c3_mat_255;
+   
+   [folder, baseFileName, extension] = fileparts(char(save_edge));
+        if exist(folder, 'dir')==0
+            mkdir(char(folder))
+   end
+    
+   imwrite(mat_255, char(save_edge))
+
+  %  % Saving method
+   
+   %    bboxes_1000(1:50,((i-1*5)+1):i*5) = bboxes(1:50,1:5);
+
+  
+   
+    query_display = sprintf('%d / %d',i,length(images));
+    disp(query_display)
+
+end
+
+filemat_name = strcat('/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/','q','_all.mat');
+save(filemat_name,'bboxes_1000');
+bboxes_1000 = [];
+
+
+function new_filePath = create_filepath_file(Parent_dir, file_dir, file_name)
+new_filePath = strcat(Parent_dir,file_dir); %filepath is between savepath (might need to create the directories)
+     %% Save the original edge image
+    if exist(new_filePath, 'dir')==0
+      mkdir(char(new_filePath))
+    end
+    new_filePath = strcat(new_filePath,"/",file_name);
+end
+
+function y = norml_values_strict(xx,max_value,min1,max1)
+    y=((xx-min1).*max_value)./(max1-min1);
 end
