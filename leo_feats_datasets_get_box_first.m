@@ -8,27 +8,26 @@ paths= localPaths();
 %% DATAPATH
 
 %%XPS
-addpath(genpath('/home/leo/docker_ws/netvlad/SELN-0.1-box'));
+addpath(genpath('/cluster/home/mbhutta/docker_ws/netvlad'));
 
-Save_path ='/home/leo/docker_ws/datasets/Pittsburgh-all/vt/';
 
 %% DATASET
 
 % PITTSBURG
-netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white'; % its in the CNN
-
-db= dbPitts('30k', 'test');
-%images = db.dbImageFns;
-images = db.qImageFns;
-images_paths = '/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/queries/';
-
-% TOKYO247
-%db = dbTokyo247();
-%images_paths = paths.dsetRootTokyo247;
+%netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white'; % its in the CNN
+%db= dbPitts('30k', 'test');
 %images = db.dbImageFns;
 %images = db.qImageFns;
-%netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
-%images_paths = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/dataset/query';
+%images_paths = '/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/queries/';
+
+% TOKYO247
+Save_path ='/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/vt/';
+
+netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white'; % its in the CNN
+db = dbTokyo247();
+images = db.dbImageFns;
+%images = db.qImageFns;
+images_paths = '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/images/';
 
 
 %% EDGE BOX
@@ -49,7 +48,7 @@ opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
 %% START
 load( sprintf('%s%s.mat', paths.ourCNNs, netID), 'net' );
 net= relja_simplenn_tidy(net);
-j = 0;
+
 for i = 1:size(images)
         file_name = strcat(images_paths,images(i)); 
         im= vl_imreadjpeg({char(file_name)}); 
@@ -89,14 +88,15 @@ for i = 1:size(images)
     
         feats_file(i) = struct ('featsdb', feats); 
 
-        if i - j == 5
+        if rem(i,500) == 0
+            j = i-500;
             filemat_name = strcat(Save_path,'db_feats_',num2str(j),'_',num2str(i),'.mat');
             save(char(filemat_name),'feats_file');
             
             filemat_name = strcat(Save_path,'db_boxes_',num2str(j),'_',num2str(i),'.mat');
             save(char(filemat_name),'bbox_file');
             
-            j = i;
+            
             
             fileID = fopen('status-leocomputerrepresentation.txt','w');
             fprintf( '==>> %i/%i ~ %% %f ',i,length(images), i/length(images)*100);

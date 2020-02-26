@@ -4,7 +4,7 @@ function paths= localPaths()
     
     % refer to README.md for the information on dependencies
     paths.libReljaMatlab= 'depends/relja_matlab/';
-    paths.libMatConvNet= '/home/leo/docker_ws/netvlad/netvlad-original/matconvnet/'; % should contain matlab/
+    paths.libMatConvNet= '/cluster/home/mbhutta/docker_ws/matconvnet/'; % should contain matlab/
     
     % If you have installed yael_matlab (**highly recommended for speed**),
     % provide the path below. Otherwise, provide the path as 'yael_dummy/':
@@ -12,15 +12,15 @@ function paths= localPaths()
     % which are **much slower**, and only included for demonstration purposes
     % so do consider installing yael_matlab, or make your own faster
     % version (especially of the yael_nn function)
-    paths.libYaelMatlab= '/home/leo/docker_ws/netvlad/yael_matlab/';
+    paths.libYaelMatlab= 'yael_dummy/';
     
     % --- dataset specifications
     
-    paths.dsetSpecDir= '/home/leo/docker_ws/netvlad/datasets-specs/';
+    paths.dsetSpecDir= 'datasets-specs/';
     
     % --- dataset locations
     paths.dsetRootPitts= '/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/'; % should contain images/ and queries/
-    paths.dsetRootTokyo247= '/home/leo/docker_ws/datasets/247_Tokyo_GSV/'; % should contain images/ and query/
+    paths.dsetRootTokyo247= '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/'; % should contain images/ and query/
     %paths.dsetRootTokyoTM= '/home/leo/docker_ws/datasets/tokyoTimeMachine/'; % should contain images/
     paths.dsetRootTokyoTM= '/home/leo/docker_ws/datasets/tinyTimeMachine/'; % should contain images/
 %   paths.dsetRootOxford= '/mnt/0287D1936157598A/docker_ws/datasets/NetvLad/OxfordBuildings/'; % should contain images/ and groundtruth/, and be writable
@@ -30,7 +30,7 @@ function paths= localPaths()
     % --- our networks
     % models used in our paper, download them from our research page
     % paths.ourCNNs= '~/Data/models/';
-    paths.ourCNNs= '/home/leo/docker_ws/netvlad/models_v103_pre-trained/';
+    paths.ourCNNs= '/cluster/home/mbhutta/docker_ws/netvlad/models/';
     % --- pretrained networks
     % off-the-shelf networks trained on other tasks, available from the MatConvNet
     % website: http://www.vlfeat.org/matconvnet/pretrained/
