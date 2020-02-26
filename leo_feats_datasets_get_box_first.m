@@ -1,53 +1,63 @@
-
 % run /mnt/0287D1936157598A/docker_ws/docker_ws/netvlad/netvlad-orignal/leo_computeRepresentation_box_datasets.m
 
 clear all;
 clc;
-
-addpath(genpath('/mnt/0287D1936157598A/docker_ws/docker_ws/netvlad/leo-netvlad'));
-
 setup;
-
-
 paths= localPaths();
 
-%%
+%% DATAPATH
 
-db = dbTokyo247();
+%%XPS
+addpath(genpath('/home/leo/docker_ws/netvlad/SELN-0.1-box'));
 
-images_q = db.qImageFns;
-images_paths = paths.dsetRootTokyo247;
+Save_path_1_e ='/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt';
 
+%% DATASET
 
+% PITTSBURG
+netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white'; % its in the CNN
 
 db= dbPitts('30k', 'test');
-images = db.dbImageFns;
+%images = db.dbImageFns;
+images = db.qImageFns;
+images_paths = '/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/queries/';
+
+% TOKYO247
+%db = dbTokyo247();
+%images_paths = paths.dsetRootTokyo247;
+%images = db.dbImageFns;
 %images = db.qImageFns;
-
 %netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white';
+%images_paths = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/dataset/query';
 
-% make two bin files for all
 
-% 1-3101
-% 1.mat- 3101-3601
-% afterwards all files are of hundreds
+%% EDGE BOX
+%load pre-trained edge detection model and set opts (see edgesDemo.m)
 
+model=load('edges/models/forest/modelBsds'); model=model.model;
+model.opts.multiscale=0; model.opts.sharpen=2; model.opts.nThreads=4;
+% set up opts for edgeBoxes (see edgeBoxes.m)
+opts = edgeBoxes;
+opts.alpha = .85;     % step size of sliding window search0.65
+opts.beta  = .8;     % nms threshold for object proposals0.75
+opts.minScore = .01;  % min score of boxes to detect
+opts.maxBoxes = 200;  % max number of boxes to detect 1e4
+
+
+%% START
 load( sprintf('%s%s.mat', paths.ourCNNs, netID), 'net' );
 net= relja_simplenn_tidy(net);
 %j = 3601;
 for i = 1:size(images)
-    add_missing_file = '000/000414_pitch1_yaw10.jpg';
-
-    if strcmp(images(i), add_missing_file) == 1
-        file_name = strcat(paths.dsetRootPitts,"/",images(i)); 
-        mat_name = strrep(images(i),'.jpg','.mat');
+        file_name = strcat(images_paths,images(i)); 
+        im= vl_imreadjpeg({char(file_name)}); 
+        I = uint8(im{1,1});
+        [bboxes, E] =edgeBoxes(I,model);
+        results = uint8(E * 255);
         
-
-        Mat_file = strcat(mat_paths,"/",mat_name); 
-        aq = load(Mat_file);
-
-        im= vl_imreadjpeg({convertStringsToChars(file_name)}); 
-
+        
+        
+        bboxes_1000 = bboxes;
         
 
 
@@ -55,7 +65,7 @@ for i = 1:size(images)
 
 
 
-        mat_boxes = uint8(aq.bboxes/16); % to preserve the spatial information
+        mat_boxes = uint8(bboxes/16); % to preserve the spatial information
         %size(mat_boxes)
         while (size(mat_boxes) < 50)
             mat_boxes_add = [0 0 30 40 0]; 
@@ -89,7 +99,7 @@ for i = 1:size(images)
         fileID = fopen('status-leocomputerrepresentation.txt','w');
         fprintf( '==>> %i/%i ~ %% %f ',i,length(images), i/length(images)*100);
         fclose(fileID);
-    end
+
 %   #if (i-j) == 500
 %
  %       j = i;
@@ -103,7 +113,7 @@ images = db.qImageFns;
 for i = 1:size(images)
     add_missing_file = '000/000414_pitch1_yaw6.jpg';
     if images(i) == char(add_missing_file )
-        file_name = strcat(paths.dsetRootPitts,"/",images(i)); 
+        file_name = strcat(paths.dsetRootTokyo247,"/",images(i)); 
         mat_name = strrep(images(i),'.jpg','.mat');
         Mat_file = strcat(mat_paths,"/",mat_name); 
         aq = load(Mat_file);
@@ -152,37 +162,6 @@ for i = 1:size(images)
    % end 
 end
 
-
-clc;
-clear all;
-addpath(genpath('/home/leo/docker_ws/pdollar-edges-folder-processing-matlab'));
-
-% 1 Channel Merged all (simplex)                | Viewtag_1_e 
-% 3 channel Level Edges Alone                   | Viewtag_3_e 
-% 3 Channel Rrr-ggg-bbb (without normalization)   | Viewtag_3_rbg 
-% 3 Channel rrr-ggg-bbb -> Edges-> normalization  | Viewtag_3_rgb_n
-
-
-%% load pre-trained edge detection model and set opts (see edgesDemo.m)
-
-model=load('models/forest/modelBsds'); model=model.model;
-model.opts.multiscale=0; model.opts.sharpen=2; model.opts.nThreads=4;
-
-%% set up opts for edgeBoxes (see edgeBoxes.m)
-opts = edgeBoxes;
-opts.alpha = .85;     % step size of sliding window search0.65
-opts.beta  = .8;     % nms threshold for object proposals0.75
-opts.minScore = .01;  % min score of boxes to detect
-opts.maxBoxes = 200;  % max number of boxes to detect 1e4
-
-%%
-
-
-Dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/dataset/query';
-
-addpath(genpath(Dataset_path));
-
-Save_path_1_e ='/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt';
 
 
 
