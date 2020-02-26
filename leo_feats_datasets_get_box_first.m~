@@ -42,7 +42,9 @@ opts.alpha = .85;     % step size of sliding window search0.65
 opts.beta  = .8;     % nms threshold for object proposals0.75
 opts.minScore = .01;  % min score of boxes to detect
 opts.maxBoxes = 200;  % max number of boxes to detect 1e4
-
+gt=[111	98	25	101];
+opts.minBoxArea = 0.5*gt(3)*gt(4)
+opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3))
 
 %% START
 load( sprintf('%s%s.mat', paths.ourCNNs, netID), 'net' );
@@ -52,19 +54,20 @@ for i = 1:size(images)
         file_name = strcat(images_paths,images(i)); 
         im= vl_imreadjpeg({char(file_name)}); 
         I = uint8(im{1,1});
-        [bboxes, E] =edgeBoxes(I,model);
+        [bbx, E] =edgeBoxes(I,model);
         results = uint8(E * 255);
         
+         
+        bboxes=[]; %make empty list of small boxes
+        b_size = size(bbx,1); 
+        for ii=1:b_size
+             bb=bbx(ii,:);
+             square = bb(3)*bb(4);
+             if square <2*gt(3)*gt(4)
+                bboxes=[bbs1;bb];
+             end
+        end
         
-        
-        bboxes_1000 = bboxes;
-        
-
-
-
-
-
-
         mat_boxes = uint8(bboxes/16); % to preserve the spatial information
         %size(mat_boxes)
         while (size(mat_boxes) < 50)
@@ -73,6 +76,17 @@ for i = 1:size(images)
             size(mat_boxes)
 
         end
+        
+        bbox = struct ('boxes', bboxes); 
+        bboxes_1000 = bboxes;
+        
+
+
+
+
+
+
+        
         im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
         feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
     
