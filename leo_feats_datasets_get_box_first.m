@@ -10,7 +10,7 @@ paths= localPaths();
 %%XPS
 addpath(genpath('/home/leo/docker_ws/netvlad/SELN-0.1-box'));
 
-Save_path_1_e ='/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt';
+Save_path ='/home/leo/docker_ws/datasets/Pittsburgh-all/vt/';
 
 %% DATASET
 
@@ -49,32 +49,33 @@ opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
 %% START
 load( sprintf('%s%s.mat', paths.ourCNNs, netID), 'net' );
 net= relja_simplenn_tidy(net);
-%j = 3601;
+j = 0;
 for i = 1:size(images)
         file_name = strcat(images_paths,images(i)); 
         im= vl_imreadjpeg({char(file_name)}); 
         I = uint8(im{1,1});
         [bbx, E] =edgeBoxes(I,model);
-        results = uint8(E * 255);
+        %results = uint8(E * 255); if you want to save the images -> then
+        %use it
         
-         
-        bboxes=[]; %make empty list of small boxes
+        %make empty list of small boxes 
+        bboxes=[]; 
         b_size = size(bbx,1); 
         for ii=1:b_size
              bb=bbx(ii,:);
              square = bb(3)*bb(4);
              if square <2*gt(3)*gt(4)
-                bboxes=[bbs1;bb];
+                bboxes=[bbx;bb];
              end
         end
         
         bbox_file(i) = struct ('testdb', bboxes); 
-        %% SAVE
         
         
+        % to preserve the spatial information
+        mat_boxes = uint8(bboxes/16); 
         
-        mat_boxes = uint8(bboxes/16); % to preserve the spatial information
-        %size(mat_boxes)
+        %size(mat_boxes) (if boxes are less then 50 -> create empty boxes
         while (size(mat_boxes) < 50)
             mat_boxes_add = [0 0 30 40 0]; 
             mat_boxes( end+1, : ) = mat_boxes_add; 
@@ -83,19 +84,29 @@ for i = 1:size(images)
         end
         
         
-
-
-        
         im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
         feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
     
-        filemat_name = strcat('/mnt/1E48BE700AFD16C7/datasets/output-files/db','/',mat_name);
-        [folder, baseFileName, extension] = fileparts(char(filemat_name));
-        if exist(folder, 'dir')==0
-            mkdir(char(folder))
-        end
+        feats_file(i) = struct ('featsdb', feats); 
 
-        save(char(filemat_name),'feats');
+        if i - j == 5
+            filemat_name = strcat(Save_path,'db_feats_',num2str(j),'_',num2str(i),'.mat');
+            save(char(filemat_name),'feats_file');
+            
+            filemat_name = strcat(Save_path,'db_boxes_',num2str(j),'_',num2str(i),'.mat');
+            save(char(filemat_name),'bbox_file');
+            
+            j = i;
+            
+            fileID = fopen('status-leocomputerrepresentation.txt','w');
+            fprintf( '==>> %i/%i ~ %% %f ',i,length(images), i/length(images)*100);
+            fclose(fileID);
+            
+            clear feats_file;
+            clear bbox_file;
+        end
+        
+        
     
         clear feats;
         clear im;
@@ -105,74 +116,11 @@ for i = 1:size(images)
         clear file_name;
         clear mat_name;
         clear Mat_file;
-        %res_b{i} = feats;
-    %query_display = sprintf( '%i/%i ~ %% %f ',i,length(images), i/length(images)*100);
-    %cd disp(query_display)
         
-        fileID = fopen('status-leocomputerrepresentation.txt','w');
-        fprintf( '==>> %i/%i ~ %% %f ',i,length(images), i/length(images)*100);
-        fclose(fileID);
 
-%   #if (i-j) == 500
-%
- %       j = i;
-  %      res_b = [];
-   %     res_b = { struct('feat', cell(4096,50))}; 
-   % end 
+        fprintf( '  ==>> %i/%i ',i,length(images));
+
+
+
 end
-
-clear images;
-images = db.qImageFns;
-for i = 1:size(images)
-    add_missing_file = '000/000414_pitch1_yaw6.jpg';
-    if images(i) == char(add_missing_file )
-        file_name = strcat(paths.dsetRootTokyo247,"/",images(i)); 
-        mat_name = strrep(images(i),'.jpg','.mat');
-        Mat_file = strcat(mat_paths,"/",mat_name); 
-        aq = load(Mat_file);
-
-        im= vl_imreadjpeg({convertStringsToChars(file_name)}); 
-        mat_boxes = uint8(aq.bboxes/16); % to preserve the spatial information
-        %size(mat_boxes)
-        while (size(mat_boxes) < 50)
-            mat_boxes_add = [0 0 30 40 0]; 
-            mat_boxes( end+1, : ) = mat_boxes_add; 
-            size(mat_boxes)
-
-        end
-        im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-        feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
-    
-        filemat_name = strcat('/mnt/1E48BE700AFD16C7/datasets/output-files/q','/',mat_name);
-        [folder, baseFileName, extension] = fileparts(char(filemat_name));
-        if exist(folder, 'dir')==0
-            mkdir(char(folder))
-        end
-
-        save(char(filemat_name),'feats');
-    
-        clear feats;
-        clear im;
-        clear aq;
-        clear mat_boxes;
-        clear filemat_name; 
-        clear file_name;
-        clear mat_name;
-        clear Mat_file;
-        %res_b{i} = feats;
-    %query_display = sprintf( '%i/%i ~ %% %f ',i,length(images), i/length(images)*100);
-    %cd disp(query_display)
-        
-        fileID = fopen('status-leocomputerrepresentation.txt','w');
-        fprintf( '==>> %i/%i ~ %% %f ',i,length(images), i/length(images)*100);
-        fclose(fileID);
-    end
-%   #if (i-j) == 500
-%
- %       j = i;
-  %      res_b = [];
-   %     res_b = { struct('feat', cell(4096,50))}; 
-   % end 
-end
-
 
