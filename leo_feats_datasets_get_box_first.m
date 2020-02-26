@@ -88,8 +88,8 @@ for i = 1:size(images)
     
         feats_file(i) = struct ('featsdb', feats); 
 
-        if rem(i,500) == 0
-            j = i-500;
+        if rem(i,5000) == 0
+            j = i-5000;
             filemat_name = strcat(Save_path,'db_feats_',num2str(j),'_',num2str(i),'.mat');
             save(char(filemat_name),'feats_file');
             

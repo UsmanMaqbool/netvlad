@@ -26,8 +26,10 @@ Save_path ='/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/vt/';
 netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white'; % its in the CNN
 db = dbTokyo247();
 images = db.dbImageFns;
-%images = db.qImageFns;
 images_paths = '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/images/';
+
+%images = db.qImageFns;
+%images_paths = '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/query/';
 
 
 %% EDGE BOX
@@ -68,14 +70,15 @@ for i = 1:size(images)
              end
         end
         
-        bbox_file(i) = struct ('testdb', bboxes); 
+        bbox_file(i) = struct ('testq', bboxes); 
         
+                
 
-        if rem(i,1000) == 0
+        if rem(i,5000) == 0
             if i == 75984
                 j == 75000;
             else
-                j = i-500;
+                j = i-5000;
             end
             
             filemat_name = strcat(Save_path,'db_boxes_',num2str(j),'_',num2str(i),'.mat');
@@ -106,4 +109,8 @@ for i = 1:size(images)
 
 
 end
+j = j+5000;
 
+
+filemat_name = strcat(Save_path,'db_boxes_',num2str(j),'_',num2str(i),'.mat');
+save(char(filemat_name),'bbox_file');
