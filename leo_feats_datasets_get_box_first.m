@@ -42,7 +42,9 @@ opts.alpha = .85;     % step size of sliding window search0.65
 opts.beta  = .8;     % nms threshold for object proposals0.75
 opts.minScore = .01;  % min score of boxes to detect
 opts.maxBoxes = 200;  % max number of boxes to detect 1e4
-
+gt=[111	98	25	101];
+opts.minBoxArea = 0.5*gt(3)*gt(4);
+opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
 
 %% START
 load( sprintf('%s%s.mat', paths.ourCNNs, netID), 'net' );
@@ -52,19 +54,25 @@ for i = 1:size(images)
         file_name = strcat(images_paths,images(i)); 
         im= vl_imreadjpeg({char(file_name)}); 
         I = uint8(im{1,1});
-        [bboxes, E] =edgeBoxes(I,model);
+        [bbx, E] =edgeBoxes(I,model);
         results = uint8(E * 255);
         
+         
+        bboxes=[]; %make empty list of small boxes
+        b_size = size(bbx,1); 
+        for ii=1:b_size
+             bb=bbx(ii,:);
+             square = bb(3)*bb(4);
+             if square <2*gt(3)*gt(4)
+                bboxes=[bbs1;bb];
+             end
+        end
+        
+        bbox_file(i) = struct ('testdb', bboxes); 
+        %% SAVE
         
         
-        bboxes_1000 = bboxes;
         
-
-
-
-
-
-
         mat_boxes = uint8(bboxes/16); % to preserve the spatial information
         %size(mat_boxes)
         while (size(mat_boxes) < 50)
@@ -73,6 +81,11 @@ for i = 1:size(images)
             size(mat_boxes)
 
         end
+        
+        
+
+
+        
         im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
         feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
     
@@ -163,99 +176,3 @@ for i = 1:size(images)
 end
 
 
-
-
-all_images = load('/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/qTokyoTMImageFns.mat');
-images = all_images.aa{1,1};
-
-
-
-
-tElapsed = zeros(10,1);
-time_i = 1;
-
-bboxes_1000 = struct;
-jj = 0;
-
-for i = 1:size(images)
-          
-    file_name = strcat(Dataset_path,"/",images(i)); 
-    save_edge = strcat(Save_path_1_e,"/",images(i)); 
-
-      tStart = tic; 
-  
-    %% Read and Process Image
-    
-    
-    
-    I = imread(char(file_name));
-    [bboxes, E] =edgeBoxes(I,model);
-    results = uint8(E * 255);
-    bboxes_1000 = bboxes;
-    %if i-jj == 5
-   % filemat_name = strcat('/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/','q','_',jj,'_',i,'.mat');
-   % save(filemat_name,'bboxes_1000');
-   % bboxes_1000 = [];
-
-    %end    
-%% Create View Tags
-    
-% Create Edge VT
-   e8u_norml_values = norml_values_strict(E,1,0,1);     % (xx,max_value,min1,max1)
-
-   e8u_c1 = e8u_norml_values;
-   e8u_c1(e8u_c1>.33)  = 0;
-   e8u_c1 = norml_values_strict(e8u_c1,1,0,0.33);
-
-   e8u_c2 = e8u_norml_values;
-   e8u_c2(e8u_c2<.33)  = 0;
-   e8u_c2(e8u_c2>.66)  = 0;
-   e8u_c2 = norml_values_strict(e8u_c2,1,0.33,0.66);
-
-   e8u_c3 = e8u_norml_values;
-   e8u_c3(e8u_c3<.66)  = 0;
-   e8u_c3 = norml_values_strict(e8u_c3,1,.66,1);
-
-   c1_mat_255 = uint8(e8u_c1* 255);
-   c2_mat_255 = uint8(e8u_c2* 255);
-   c3_mat_255 = uint8(e8u_c3* 255);
-    
-    
-
-   mat_255 = c1_mat_255+c2_mat_255+c3_mat_255;
-   
-   [folder, baseFileName, extension] = fileparts(char(save_edge));
-        if exist(folder, 'dir')==0
-            mkdir(char(folder))
-   end
-    
-   imwrite(mat_255, char(save_edge))
-
-  %  % Saving method
-   
-   %    bboxes_1000(1:50,((i-1*5)+1):i*5) = bboxes(1:50,1:5);
-
-  
-   
-    query_display = sprintf('%d / %d',i,length(images));
-    disp(query_display)
-
-end
-
-filemat_name = strcat('/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/','q','_all.mat');
-save(filemat_name,'bboxes_1000');
-bboxes_1000 = [];
-
-
-function new_filePath = create_filepath_file(Parent_dir, file_dir, file_name)
-new_filePath = strcat(Parent_dir,file_dir); %filepath is between savepath (might need to create the directories)
-     %% Save the original edge image
-    if exist(new_filePath, 'dir')==0
-      mkdir(char(new_filePath))
-    end
-    new_filePath = strcat(new_filePath,"/",file_name);
-end
-
-function y = norml_values_strict(xx,max_value,min1,max1)
-    y=((xx-min1).*max_value)./(max1-min1);
-end
