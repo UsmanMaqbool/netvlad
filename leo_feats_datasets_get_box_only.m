@@ -16,9 +16,12 @@ addpath(genpath('/cluster/home/mbhutta/docker_ws/netvlad'));
 % PITTSBURG
 netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white'; % its in the CNN
 db= dbPitts('30k', 'test');
-%images = db.dbImageFns;
-images = db.qImageFns;
-images_paths = '/cluster/scratch/mbhutta/Test_Pitts30k/queries/';
+images = db.dbImageFns;
+images_paths = '/cluster/scratch/mbhutta/Test_Pitts30k/images/';
+
+%images = db.qImageFns;
+%images_paths = '/cluster/scratch/mbhutta/Test_Pitts30k/queries/';
+
 Save_path ='/cluster/scratch/mbhutta/Test_Pitts30k/vt/';
 
 
