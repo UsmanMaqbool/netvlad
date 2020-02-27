@@ -7,30 +7,30 @@ paths= localPaths();
 
 %% DATAPATH
 
-%%XPS
+%%Euler Cluster
 addpath(genpath('/cluster/home/mbhutta/docker_ws/netvlad'));
 
 
 %% DATASET
 
 % PITTSBURG
-%netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white'; % its in the CNN
-%db= dbPitts('30k', 'test');
+netID= 'vd16_pitts30k_conv5_3_vlad_preL2_intra_white'; % its in the CNN
+db= dbPitts('30k', 'test');
 %images = db.dbImageFns;
-%images = db.qImageFns;
-%images_paths = '/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/queries/';
+images = db.qImageFns;
+images_paths = '/cluster/scratch/mbhutta/Test_Pitts30k/queries/';
+Save_path ='/cluster/scratch/mbhutta/Test_Pitts30k/vt/';
+
 
 % TOKYO247
-Save_path ='/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/vt/';
-
-netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white'; % its in the CNN
-db = dbTokyo247();
-images = db.dbImageFns;
-images_paths = '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/images/';
+%netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white'; % its in the CNN
+%db = dbTokyo247();
+%images = db.dbImageFns;
+%images_paths = '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/images/';
 
 %images = db.qImageFns;
 %images_paths = '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/query/';
-
+%Save_path ='/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/vt/';
 
 %% EDGE BOX
 %load pre-trained edge detection model and set opts (see edgesDemo.m)
@@ -53,7 +53,7 @@ net= relja_simplenn_tidy(net);
 
 for i = 1:size(images)
         file_name = strcat(images_paths,images(i)); 
-        im= vl_imreadjpeg({char(file_name)}); 
+        im= vl_imreadjpeg({char(file_name)},'numThreads', 12); 
         I = uint8(im{1,1});
         [bbx, E] =edgeBoxes(I,model);
         %results = uint8(E * 255); if you want to save the images -> then
