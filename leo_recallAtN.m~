@@ -97,7 +97,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
         end
         
         Top_boxes = 50;
-        total_top = 100; %100;
+        total_top = 5; %100;
         k = Top_boxes;
  
         
@@ -109,7 +109,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             load(q_dbfeat);
         else
             % Top 100 sample
-            for jj = 1:total_top
+            for jj = 1:5
 
                     db_img = strcat(dataset_path,'/images/', db.dbImageFns{tt(jj,1),1});  
                     im= vl_imreadjpeg({char(db_img)}); 
@@ -154,7 +154,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
         numReturned= length(ids);
         assert(numReturned<=nTop); % if your searcher returns fewer, it's your fault
         
-        thisRecall= cumsum( isPos(iTest, idss) ) > 0; % yahan se get karta hai %db.cp (close position)
+        thisRecall= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
         recalls(iTestSample, :)= thisRecall( min(ns, numReturned) );
         printRecalls(iTestSample)= thisRecall(printN);
     end
