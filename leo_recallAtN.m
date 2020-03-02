@@ -96,9 +96,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             save(q_feat,'query_full_feat');
         end
         
-        Top_boxes = 50;
         total_top = 100; %100;
-        k = Top_boxes;
  
         
         
@@ -122,12 +120,16 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
                     feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
                     feats_file(jj) = struct ('featsdb', feats); 
                     clear feats;
+                    fprintf( '==>> %i ~ %i \n ',jj,total_top );
+
             end
             save(q_dbfeat,'feats_file');
             
         end
         SLEN_top = zeros(total_top,2); 
-
+        Top_boxes = 50;
+        k = Top_boxes;
+        
         for i=1:total_top
             feats2 = feats_file(i).featsdb;
             for j = 1:Top_boxes
