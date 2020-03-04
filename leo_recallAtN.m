@@ -85,7 +85,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
         if exist(q_feat, 'file')
             load(q_feat);
         else
-            im= vl_imreadjpeg({char(qimg_path)}); 
+            im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
             I = uint8(im{1,1});
             [bbox, E] =edgeBoxes(I,model);
@@ -112,7 +112,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             for jj = 1:total_top
 
                     db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
-                    im= vl_imreadjpeg({char(db_img)}); 
+                    im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
                     I = uint8(im{1,1});
                     [bbox, E] =edgeBoxes(I,model);
                     [wd, hh] = size(im{1,1});
