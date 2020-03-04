@@ -76,9 +76,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
           
         
         %% Leo START
-       % tt = sort(ids(:,1)); %sort karna hai aisy k maza a jay 
-        
-            
+                
         qimg_path = strcat(dataset_path,'/query/', db.qImageFns{iTestSample, 1});  
         q_img = strcat(save_path,'/', db.qImageFns{iTestSample, 1});  
         q_feat = strrep(q_img,'.jpg','.mat');
@@ -100,10 +98,6 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
         
         total_top = 100; %100;
  
-        
-        
-        min_old = 0; max_old = 0; 
-       
         q_dbfeat = strrep(q_feat,'.mat','_db_feats.mat');
         if exist(q_dbfeat, 'file')
             load(q_dbfeat);
@@ -122,7 +116,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
                     feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
                     feats_file(jj) = struct ('featsdb', feats); 
                     clear feats;
-                    fprintf( '==>> %i ~ %i \n ',jj,total_top );
+                    fprintf( '==>> %i ~ %i/%i ',jj,iTestSample,total_top );
 
             end
             save(q_dbfeat,'feats_file');
