@@ -35,12 +35,12 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
     
     
     
-    addpath(genpath('/mnt/02/docker_ws/docker_ws/netvlad/netvlad-orignal'));
+    addpath(genpath('/mnt/02/docker_ws/docker_ws/netvlad/slen-0.2-box'));
     
     %% EDGE BOX
     %load pre-trained edge detection model and set opts (see edgesDemo.m)
 
-    model=load('edges/models/forest/modelBsds'); model=model.model;
+    model=load('models/forest/modelBsds'); model=model.model;
     model.opts.multiscale=0; model.opts.sharpen=2; model.opts.nThreads=4;
     % set up opts for edgeBoxes (see edgeBoxes.m)
     opts = edgeBoxes;
@@ -57,9 +57,11 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
     
     top_100 = [];
     
-    %dataset_path = '/mnt/02/docker_ws/datasets/test-vt/247dataset/247_Tokyo_GSV';
-    dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
-    save_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt-2';
+    dataset_path = '/mnt/02/docker_ws/datasets/test-vt/247dataset/247_Tokyo_GSV';
+    save_path = '/mnt/02/docker_ws/datasets/test-vt/247dataset/247_Tokyo_GSV/vt-2';
+    
+    %dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
+    %save_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt-2';
     for iTestSample= 1:length(toTest)
         
         %Display
@@ -74,7 +76,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
           
         
         %% Leo START
-        tt = sort(ids(:,1)); %sort karna hai aisy k maza a jay 
+       % tt = sort(ids(:,1)); %sort karna hai aisy k maza a jay 
         
             
         qimg_path = strcat(dataset_path,'/query/', db.qImageFns{iTestSample, 1});  
@@ -109,7 +111,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             % Top 100 sample
             for jj = 1:total_top
 
-                    db_img = strcat(dataset_path,'/images/', db.dbImageFns{tt(jj,1),1});  
+                    db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
                     im= vl_imreadjpeg({char(db_img)}); 
                     I = uint8(im{1,1});
                     [bbox, E] =edgeBoxes(I,model);

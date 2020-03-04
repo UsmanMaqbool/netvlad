@@ -4,7 +4,7 @@ function paths= localPaths()
     
     % refer to README.md for the information on dependencies
     paths.libReljaMatlab= 'depends/relja_matlab/';
-    paths.libMatConvNet= '/home/leo/docker_ws/netvlad/netvlad-original/matconvnet'; % should contain matlab/
+    paths.libMatConvNet= '/mnt/02/docker_ws/docker_ws/netvlad/matconvnet/'; % should contain matlab/
     
     % If you have installed yael_matlab (**highly recommended for speed**),
     % provide the path below. Otherwise, provide the path as 'yael_dummy/':
@@ -23,7 +23,7 @@ function paths= localPaths()
     % CLuster
     %paths.dsetRootTokyo247= '/cluster/scratch/mbhutta/Test_247_Tokyo_GSV/'; % should contain images/ and query/
     % XPS
-    paths.dsetRootTokyo247= '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/'; % should contain images/ and query/
+    paths.dsetRootTokyo247= '/mnt/02/docker_ws/datasets/test-vt/247dataset/247_Tokyo_GSV/'; % should contain images/ and query/
     %paths.dsetRootTokyoTM= '/home/leo/docker_ws/datasets/tokyoTimeMachine/'; % should contain images/
     paths.dsetRootTokyoTM= '/home/leo/docker_ws/datasets/tinyTimeMachine/'; % should contain images/
 %   paths.dsetRootOxford= '/mnt/0287D1936157598A/docker_ws/datasets/NetvLad/OxfordBuildings/'; % should contain images/ and groundtruth/, and be writable
@@ -33,7 +33,7 @@ function paths= localPaths()
     % --- our networks
     % models used in our paper, download them from our research page
     % paths.ourCNNs= '~/Data/models/';
-    paths.ourCNNs= '/home/leo/docker_ws/netvlad/models_v103_pre-trained/';
+    paths.ourCNNs= '/mnt/02/docker_ws/datasets/NetvLad/models_v103_pre-trained/';
     %paths.ourCNNs= '/cluster/home/mbhutta/docker_ws/netvlad/models/';
     
     % --- pretrained networks
@@ -47,5 +47,5 @@ function paths= localPaths()
     paths.initData= '/home/leo/docker_ws/netvlad/netvlad-pre-data/initdata/';
     
     % --- output directory
-    paths.outPrefix= '/home/leo/docker_ws/netvlad/netvlad-pre-data/output/';
+    paths.outPrefix= '/mnt/02/docker_ws/datasets/netvlad-original-output/';
 end

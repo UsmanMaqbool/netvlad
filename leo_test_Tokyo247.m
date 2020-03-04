@@ -33,6 +33,6 @@ qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);    % ju
 %serialAllFeats(net, dbTest.qPath, dbTest.qImageFns, qFeatFn, 'batchSize', 1); % Tokyo 24/7 query images have different resolutions so batchSize is constrained to 1[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
 
 %Test the features by loading the bin files
-[recall, ~, ~, opts]= testFromFn(dbTest, dbFeatFn, qFeatFn);
+[recall, ~, ~, opts]= leo_testFromFn(dbTest, dbFeatFn, qFeatFn);
 plot(opts.recallNs, recall, 'ro-'); grid on; xlabel('N'); ylabel('Recall@N'); title(netID, 'Interpreter', 'none');
 
