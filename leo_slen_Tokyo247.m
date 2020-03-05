@@ -28,5 +28,7 @@ qFeatFn = sprintf('%s%s_%s_q.bin', paths.outPrefix, netID, dbTest.name);    % ju
 
 %Test the features by loading the bin files
 [recall, ~, ~, opts]= leo_slen_testFromFn(dbTest, dbFeatFn, qFeatFn);
+save_results = strcat(paths.outPrefix,'plots/vd16_tokyoTM_conv5_3_vlad_preL2_intra_white','original.mat')
+save(char(save_results), 'recall','opts.recallNs');
 plot(opts.recallNs, recall, 'ro-'); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
 

@@ -72,7 +72,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
      
         iTest= toTest(iTestSample);
         
-        ids= searcher(iTest, nTop); % Main function to find top 100 candidaes
+        [ids ds_pre]= searcher(iTest, nTop); % Main function to find top 100 candidaes
           
         
         %% Leo START
@@ -125,26 +125,32 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
         SLEN_top = zeros(total_top,2); 
         Top_boxes = 50;
         k = Top_boxes;
+        ds_all = [];
         
-        for i=1:total_top
+        for i=1:total_top 
             feats2 = feats_file(i).featsdb;
             for j = 1:Top_boxes
                 q1 = single(feats2(:,j));  %take column of each box
                 [ids1, ds1]= yael_nn(query_full_feat, q1, k);
-             
+                ds_all = [ds_all ds1];
             end
-            % original dis: 1.25
-            % Spatial Dis:
-            y=sort(ds1(:),'ascend');
-            aa = sum(y(1:Top_boxes))/Top_boxes;
-            SLEN_top(i,1) = i; SLEN_top(i,2) = aa;
-          
-        end
+            % original dis: 1.25 ds_pre
+            ds_vec = sort(ds_all(:));
+            ds_top = ds_vec;
+            ds_top(ds_vec(:) > ds_pre(iTestSample,1)) = 0;
+            ds_new = mean(ds_pre(iTestSample,1)+mean(ds_top));
+            ds_all = [];
 
-        C = sortrows(SLEN_top,2);
+            ds_new_top(i,1) = ds_new;
+
+        end
+        
+        %  SLEN_top(i,1) = i; SLEN_top(i,2) = aa;
+          
+        [C c_i] = sortrows(ds_new_top);
         idss = ids;
         for i=1:total_top
-            idss(i,1) = ids(C(i,1));
+            idss(i,1) = ids(c_i(i,1));
         end
         %% LEO END
             
@@ -152,7 +158,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
         numReturned= length(ids);
         assert(numReturned<=nTop); % if your searcher returns fewer, it's your fault
         
-        thisRecall= cumsum( isPos(iTest, idss) ) > 0; % yahan se get karta hai %db.cp (close position)
+        thisRecall= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
         recalls(iTestSample, :)= thisRecall( min(ns, numReturned) );
         printRecalls(iTestSample)= thisRecall(printN);
     end
