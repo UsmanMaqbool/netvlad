@@ -295,8 +295,11 @@
         recalls_ori(iTestSample, :)= thisRecall1( min(ns, numReturned) );
         printRecalls(iTestSample)= thisRecall(printN);
         if thisRecall(1) == 0
-            fprintf('iTestSample: %i \n',iTestSample);
+  %          fprintf('iTestSample: %i \n',iTestSample);
+  %           plot(ns, recalls(1:iTestSample,:), 'ro-',ns, recalls_ori(1:iTestSample,:), 'go-'); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
+
         end
+       
     end
     t= toc(evalProg);
     
