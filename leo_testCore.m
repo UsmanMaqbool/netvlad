@@ -6,13 +6,13 @@ function [recalls, allRecalls]= leo_testCore(db, qFeat, dbFeat, varargin)
         );
     opts= vl_argparse(opts, varargin);
     
-    searcherRAW_= @(iQuery, nTop) leo_rawNnSearch(qFeat(:,iQuery), dbFeat, nTop,db,iQuery);
+    searcherRAW_= @(iQuery, nTop) rawNnSearch(qFeat(:,iQuery), dbFeat, nTop);
     if ismethod(db, 'nnSearchPostprocess')
         searcherRAW= @(iQuery, nTop) db.nnSearchPostprocess(searcherRAW_, iQuery, nTop);
     else
         searcherRAW= searcherRAW_;
     end
-    [res, recalls]= leo_recallAtN( searcherRAW, db.numQueries,  @(iQuery, iDb) db.isPosQ(iQuery, iDb), opts.recallNs, opts.printN, opts.nTestSample, db );
+    [res, recalls]= leo_recallAtN( searcherRAW, db.numQueries,  @(iQuery, iDb) db.isPosQ(iQuery, iDb), opts.recallNs, opts.printN, opts.nTestSample,db);
     
     allRecalls= recalls;
     recalls= mean( allRecalls, 1 )';

@@ -63,9 +63,9 @@
     
     %dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
     %save_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt-2';
-    show_output = 0; startfrom = 1;
+    show_output = 2; startfrom = 1;
 
-    for iTestSample= 1:length(toTest)
+    for iTestSample= 12:length(toTest)
         
         %Display
         relja_progress(iTestSample, ...
@@ -166,7 +166,7 @@
             inegatif=sum(s(:)==-1);
             S_great = s; S_great(S_great<0) = 0; S_great = S_great.*ds_all_sub; %S_great = sum(sum(S_great));
             S_less = s; S_less(S_less>0) = 0; S_less = abs(S_less).*ds_all_sub; %S_less = sum(sum(S_less));
-            S_less_diff = diff(S_less);
+            
             [S_less_min, S_less_I] = sort(S_less(:));
             s_less_min_diff = ds_pre(i,1)-S_less_min;
 
@@ -218,26 +218,26 @@
                 subplot(2,2,1); imshow(imread(char(qimg_path))); %q_img
                 subplot(2,2,2); imshow(imread(char(db_img))); %
 
-                subplot(2,2,3); h = heatmap(S_less);
-                subplot(2,2,4); h = heatmap(S_less_diff);
+                subplot(2,2,3); h = heatmap(S_great);
+                subplot(2,2,4); h = heatmap(S_less);
 %                fprintf( '==>> Distance %f ~ Greator Values %f %f \n Less Values %f %f ~ Min %f \n',ds_pre(i,1), s_delta_all,ipositif, S_great, inegatif, S_less);
               %  fprintf('%f %f %f %f %f %f %f %f %f %f\n',(Top_boxes*Top_boxes)/inegatif, D_diff, D_diff+ds_all_less_mean, D_diff-(ds_all_less_mean/D), D_diff-s_delta_mat, D_diff+s_delta_mat,ds_all_less_mean+s_delta_mat, s_delta_mat/ds_all_less_mean, D/(D_diff-ds_all_less_mean), D);
-                fprintf('\n For %f, %f %f %f %f', Top_boxes, inegatif, s_delta_mat, ds_all_less_mean, mean(S_less_diff(:)));
+                fprintf('For %f, %f %f %f %f', Top_boxes, inegatif, s_delta_mat, ds_all_less_mean, D);
 
             end
             
             
             
-            if inegatif == 100 && mean(S_less_diff(:)) < 1.79
+            if inegatif == 100 
                 
-                D_diff = D_diff+(ds_all_less_mean); %Top_boxes0/(D*ds_pre_inv);
+                D_diff = exp(D_diff)+(ds_all_less_mean); %Top_boxes0/(D*ds_pre_inv);
             else
-                D_diff = D_diff-abs(s_delta_mat)+ds_all_less_mean; % /boxes_per_less); %100/(D*ds_pre_inv);
+                D_diff = exp(D_diff)-abs(s_delta_mat)+abs(ds_all_less_mean); % /boxes_per_less); %100/(D*ds_pre_inv);
             end
           % D_diff = 1/D;
           
            ds_new_top(i,1) = abs(D_diff);
-         %    fprintf('~ %f -> %f for %f \n',ds_pre(i,1), D_diff, i);
+           fprintf(' %f -> %f for %f \n',ds_pre(i,1), D_diff, i);
 
             ds_all = [];
 

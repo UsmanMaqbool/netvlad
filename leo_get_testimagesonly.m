@@ -7,18 +7,22 @@ paths= localPaths();
 
 %%
 
-db = dbTokyo247();
+%db = dbTokyo247();
+db= dbPitts('30k','test');
 
-images_q = db.qImageFns;
-images_paths = paths.dsetRootTokyo247;
-save_paths = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
-copy_test_files(images_paths,save_paths,images_q);
+images = db.dbImageFns;
+images_paths = char('/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/images/'); % paths.dsetRootTokyo247;
+save_paths = '/home/leo/docker_ws/datasets/Test_Pitts30k/images/';
+%images_q = db.qImageFns;
+%images_paths = char('/home/leo/docker_ws/datasets/Pittsburgh-all/Pittsburgh/queries/'); % paths.dsetRootTokyo247;
+%save_paths = '/home/leo/docker_ws/datasets/Test_Pitts30k/queries/';
+copy_test_files(images_paths,save_paths,images);
 
 
 %images  db.qImageFns;
 
 function copy_test_files(p1,pdest,filename)
-for i = 1:size(filename)
+for i = 63048:size(filename)
         source = fullfile(p1,filename(i));  
         
     if exist(char(source), 'file')
