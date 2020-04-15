@@ -18,6 +18,12 @@
     printRecalls= zeros(length(toTest),1);
     
     evalProg= tic;
+    %dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
+    %save_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt-2';
+    Top_boxes = 10;
+%57.000000 13.000000 50.000000 60.000000 40.000000 1.000000 100.000000 64.000000 5.000000 24.000000 
+
+    iTestSample_Start=1; startfrom = 1; show_output = 0;  
     
     %% LEO START
     
@@ -41,7 +47,7 @@
     %% EDGE BOX
     %load pre-trained edge detection model and set opts (see edgesDemo.m)
 
-    model=load('models/forest/modelBsds'); model=model.model;
+    model=load('edges/models/forest/modelBsds'); model=model.model;
     model.opts.multiscale=0; model.opts.sharpen=2; model.opts.nThreads=4;
     % set up opts for edgeBoxes (see edgeBoxes.m)
     opts = edgeBoxes;
@@ -61,11 +67,9 @@
     dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
     save_path = '/home/leo/docker_ws/datasets/vt-2';
     
-    %dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
-    %save_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt-2';
-    show_output = 0; startfrom = 1;
+ 
 
-    for iTestSample= 1:length(toTest)
+    for iTestSample= iTestSample_Start:length(toTest)
         
         %Display
         relja_progress(iTestSample, ...
@@ -135,7 +139,6 @@
             
         end
         SLEN_top = zeros(total_top,2); 
-        Top_boxes = 10;
         k = Top_boxes;
         ds_all = [];
        % figure;
@@ -149,29 +152,72 @@
             end
             % original dis: 1.25 ds_pre
             db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(i,1),1});  
-            ds_pre_inv = 1/ds_pre(i,1);
-            ds_all_diff = 1./(ds_all);
-            ds_all_deri = diff(ds_all);
             
-           
-           %ds_all_sub = ds_all_diff(1:10,1:10);
+            ds_pre_inv = 1/ ds_pre(i,1);
+            
+            ds_all_inv = 1./(ds_all);
+            
+            diff_ds_all = zeros(Top_boxes,Top_boxes);
+            diff_ds_all(1:Top_boxes-1,:) = diff(ds_all);
+            diff2_ds_all = diff(diff(ds_all));
+            diff2_ds_all_less = diff2_ds_all;
+            diff2_ds_all_less(diff2_ds_all_less>0) = 0;
+            diff_ds_all_inv = diff(ds_all_inv);
+        
+            
             ds_all_sub = ds_all(1:Top_boxes,1:Top_boxes);
+            ds_all_sub_inv = ds_all_inv(1:Top_boxes,1:Top_boxes);
             
-            ds_all_less = ds_all-ds_pre(i,1);  
-            ds_all_less = ds_all_less(1:Top_boxes,1:Top_boxes);
-            ds_all_diff = ds_all_diff(1:Top_boxes,1:Top_boxes);
+            
+            ds_all_less = ds_all_sub-ds_pre(i,1);
+            ds_all_less_inv = ds_all_sub_inv-ds_pre_inv;
+            
+            
             ds_all_less_mean = mean(ds_all_less(:));
-            s=sign(ds_all_less);
+            ds_all_less_inv_mean = mean(ds_all_less_inv(:));
+            
+            s=sign(ds_all_less); s_inv=sign(ds_all_less);
+            
             ipositif=sum(s(:)==1);
             inegatif=sum(s(:)==-1);
-            S_great = s; S_great(S_great<0) = 0; S_great = S_great.*ds_all_sub; %S_great = sum(sum(S_great));
-            S_less = s; S_less(S_less>0) = 0; S_less = abs(S_less).*ds_all_sub; %S_less = sum(sum(S_less));
+            S_great = s; S_great(S_great<0) = 0; S_great = S_great.*ds_all_less; S_great_n = S_great - ds_all_less_mean;
+            S_less = s; S_less(S_less>0) = 0; S_less = abs(S_less).*ds_all_less; S_less_n = S_less - ds_all_less_mean;
             S_less_diff = diff(S_less);
-            [S_less_min, S_less_I] = sort(S_less(:));
-            s_less_min_diff = ds_pre(i,1)-S_less_min;
+            
+            ipositif_inv=sum(s_inv(:)==1);
+            inegatif_inv=sum(s_inv(:)==-1);
+            S_great_inv = s_inv; S_great_inv(S_great_inv<0) = 0; S_great_inv = S_great_inv.*ds_all_less_inv; S_great_inv_n = S_great_inv - ds_all_less_inv_mean; 
+            S_less_inv = s_inv; S_less_inv(S_less_inv>0) = 0; S_less_inv = abs(S_less_inv).*ds_all_less_inv; S_less_inv_n = S_less_inv - ds_all_less_inv_mean;
 
-           % ds_all_less_mean = sum(S_less(:)/inegatif);
-            ds_pre(i,1);
+            %  [S_less_min_inv, S_less_I_inv] = sort(S_less_inv(:));
+            
+
+           S_great_mean = sum(S_great(:)/ipositif); S_great_n_mean = sum(S_great_n(:)/ipositif);
+           S_great_inv_mean = sum(S_great_inv(:)/ipositif_inv); S_great_inv_n_mean = sum(S_great_inv_n(:)/ipositif_inv);
+           
+           
+           
+           
+           S_less_mean = sum(sum(S_less/inegatif)); S_less_n_mean = sum(S_less_n(:)/inegatif);
+           S_less_inv_mean = sum(S_less_inv(:)/inegatif_inv); S_less_inv_n_mean = sum(S_less_inv_n(:)/inegatif_inv);
+          
+             
+           S_less_diff = diff(S_less); 
+           S_less_n_diff = sum(sum(S_less_n.*diff_ds_all));
+           S_less_inv_diff = sum(sum(S_less_inv.*diff_ds_all)); S_less_inv_n_diff = sum(sum(S_less_inv_n.*diff_ds_all));
+          
+           
+           
+          %  subplot(2,2,1); h = heatmap(S_less);
+           % subplot(2,2,2); h = heatmap(S_less_n);
+           % subplot(2,2,3); h = heatmap(S_less.*diff_ds_all);
+           % subplot(2,2,4); h = heatmap(S_less_n.*diff_ds_all);
+            
+           % subplot(2,2,3); h = heatmap(S_less_inv);
+           % subplot(2,2,4); h = heatmap(S_less_inv_n);
+            
+           
+           
             s_delta_all = 0;
     
             
@@ -182,9 +228,9 @@
                 s_near_mat = [];
                 for jjj = 1:Top_boxes-1
                                            
-                        s_dis = ds_pre(i,1) - S_less_col(jjj);
-                        s_less_difference = S_less_col(jjj+1)-S_less_col(jjj);
-                        if s_less_difference > 0 && s_less_difference <= 0.01 && s_dis > .24
+                        s_dis = abs(ds_pre(i,1) - S_less_col(jjj));
+                        s_less_difference = abs(S_less_col(jjj+1)-S_less_col(jjj));
+                        if s_less_difference > 0 && s_less_difference <= 0.02 && s_dis > .4
                             if isempty(s_near_mat)
                                 
                                 
@@ -218,28 +264,119 @@
                 subplot(2,2,1); imshow(imread(char(qimg_path))); %q_img
                 subplot(2,2,2); imshow(imread(char(db_img))); %
 
-                subplot(2,2,3); h = heatmap(S_less);
-                subplot(2,2,4); h = heatmap(S_less_diff);
+                
+                subplot(2,2,3); h = heatmap(diff2_ds_all_less*ds_pre_inv);
+                subplot(2,2,4); h = heatmap(diff2_ds_all*ds_pre_inv); % with plus is wokring
+              %  subplot(2,2,1); h = heatmap(diff_ds_all/ds_pre_inv);
+              %  subplot(2,2,2); h = heatmap(diff2_ds_all/ds_pre_inv);
 %                fprintf( '==>> Distance %f ~ Greator Values %f %f \n Less Values %f %f ~ Min %f \n',ds_pre(i,1), s_delta_all,ipositif, S_great, inegatif, S_less);
               %  fprintf('%f %f %f %f %f %f %f %f %f %f\n',(Top_boxes*Top_boxes)/inegatif, D_diff, D_diff+ds_all_less_mean, D_diff-(ds_all_less_mean/D), D_diff-s_delta_mat, D_diff+s_delta_mat,ds_all_less_mean+s_delta_mat, s_delta_mat/ds_all_less_mean, D/(D_diff-ds_all_less_mean), D);
-                fprintf('\n For %f, %f %f %f %f', Top_boxes, inegatif, s_delta_mat, ds_all_less_mean, mean(S_less_diff(:)));
+               % fprintf('\n For %f %f %f %f %f %f %f %f %f', D_diff, D, boxes_per_less, Top_boxes, inegatif, s_delta_mat, ds_all_less_mean, mean(S_less_diff(:)),min(S_less_diff(:)));
+                fprintf('%f -> %f %f %f %f %f %f %f %f \n',D_diff,D_diff+ S_less_mean,D_diff+ S_less_n_mean, D_diff+S_less_inv_mean,D_diff+ S_less_inv_n_mean,D_diff+ S_less_diff,D_diff+ S_less_n_diff, D_diff+S_less_inv_diff,D_diff+ S_less_inv_n_diff);
 
             end
             
+         %   exp3_diff = diff2_ds_all*ds_pre_inv;
+          %  exp3_diff = ds_all(1:Top_boxes-2,:)-exp3_diff;
+           % exp3_diff = exp3_diff+D_diff;
             
+            deri_diff =  diff2_ds_all*ds_pre_inv;%diff2_ds_all*ds_pre_inv;%diff2_ds_all/ds_pre_inv;% diff_ds_all/ds_pre_inv; %diff2_ds_all*ds_pre_inv;
+       %     min_sless = min(S_less_diff(:));
             
-            if inegatif == 100 && mean(S_less_diff(:)) < 1.79
+         %       D_diff = ds_pre(i,1)+abs(D_diff - abs(min(S_less_diff(:))))*abs());
+                 
+            
+                 
+               
+               diff_s_less = diff(S_less);
+               sol_1 = sum(diff_s_less(:));
+               
+               S1 = S_less; S1_mean = mean(S1(:),'omitnan');
+               S1(S1>S1_mean) = NaN;
+               S2 = S1; S2_mean = mean(S2(:),'omitnan');
+               S2(S2>S2_mean) = NaN;
+               S3 = S2; S3_mean = mean(S3(:),'omitnan');
+               S3(S3>S3_mean) = NaN;
+               S1(isnan(S1)) = 0;
+                S2(isnan(S2)) = 0;
+                S3(isnan(S3)) = 0;
+               S1_diff = diff(S1);
+               S2_diff = diff(S2);
+               S3_diff = diff(S3);
+               S5 = S3(1:Top_boxes-1,:).*S1_diff;
+               S1(isnan(S1)) = 0;
+               S7 = S3(1:Top_boxes-2,:).*diff2_ds_all_less;
+               S8 = S7.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
+               S6 = S5.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
+               sol_2 = sum(S1(:));
+               sol_3= sum(S2(:));
+               sol_4 = sum(S3(:));
+               sol_5 = sum(S5(:)); %s_delta_mat(:);
+               sol_6 = sum(S6(:)); 
+          
+               if show_output == 4
+                                   fprintf(' %f -> %f %f %f %f %f %f %f \n',ds_pre(i,1), D_diff, sol_1,sol_2, sol_3,sol_4,sol_5,sol_6);
+
+                     subplot(2,2,1); imshow(imread(char(qimg_path))); %q_img
+                subplot(2,2,2); imshow(imread(char(db_img))); %
+                  subplot(2,2,3); h = heatmap(S8);
+                subplot(2,2,4); h = heatmap(S5); % with plus is wokring
+               end
+               
+              heat3 = diff2_ds_all_less*ds_pre_inv;
+              %check_heat = sum(S8(2,:,:));
+              check_heat = 0;
+              %D_diff = ds_pre(i,1)-; %-s_delta_all;
+               for jj = 1:Top_boxes
+                   S8_col = S8(:,jj);
+                   check_heat_mean = mean(S8_col);
+
+                    S8_col(S8_col<check_heat_mean) = 0;
+
+                    hm = nnz(S8_col);
+                    if hm >= 2 
+                        check_heat = check_heat+ sum(S8_col);
+                    end
+               end
+              if inegatif == 100 %&& mean(S_less_diff(:)) < 1.79
+               
+           
+              % pre working 
+            %D_diff = D_diff+(ds_all_less_mean) + sum(deri_diff(:)); %Top_boxes0/(D*ds_pre_inv);
+                             %D_diff =  D_diff-abs(S_great_n_mean*S_less_n_mean)-abs(S_great_mean*S_less_mean);
+
+              D_diff = norm(D_diff-sum(S8(:)));  %Top_boxes0/(D*ds_pre_inv);
+
+                    % D_diff = norm(D_diff-(-ds_all_less_mean)) + sol_6; %Top_boxes0/(D*ds_pre_inv);
+           
+                    
+              else
+
+                      %12 tk karta hai sai kaam
+               %D_diff = norm(D_diff-(abs(S_great_n_mean*S_less_n_mean)+abs(S_great_mean*S_less_mean)))-check_heat;%+sum(deri_diff(:));
+              
+                  %12 tk karta hai sai kaam
+              % D_diff = norm(D_diff-(abs(S_great_n_mean*S_less_n_mean)+abs(S_great_mean*S_less_mean)))-sum(S8(:));%+sum(deri_diff(:));
+              
+             %  D_diff = norm(D_diff-(abs(S_great_n_mean*S_less_n_mean)+abs(S_great_mean*S_less_mean)))+sum(deri_diff(:));
+              % D_diff = D_diff-abs(s_delta_mat)+abs(min(S_less_diff(:)))*ds_all_less_mean; % /boxes_per_lss); %100/(D*ds_pre_inv);
+                         D_diff =  D_diff-abs(S_great_mean*S_less_mean);% almost netvla
                 
-                D_diff = D_diff+(ds_all_less_mean); %Top_boxes0/(D*ds_pre_inv);
-            else
-                D_diff = D_diff-abs(s_delta_mat)+ds_all_less_mean; % /boxes_per_less); %100/(D*ds_pre_inv);
-            end
+           end
+            
+        
+          %D_diff =  D_diff-abs(S_great_n_mean*S_less_n_mean)-abs(S_great_mean*S_less_mean);
+         % D_diff =  norm(D_diff-(abs(S_great_n_mean*S_less_n_mean)+abs(S_great_mean*S_less_mean)));
+          
+          
+          
           % D_diff = 1/D;
           
            ds_new_top(i,1) = abs(D_diff);
-         %    fprintf('~ %f -> %f for %f \n',ds_pre(i,1), D_diff, i);
+             
+       %  fprintf(' %f -> %f %f %f for %f \n',ds_pre(i,1), D_diff, abs(S_great_n_mean*S_less_n_mean)+abs(S_great_mean*S_less_mean),sum(deri_diff(:)),i);
 
-            ds_all = [];
+         ds_all = [];
 
 
         end
@@ -279,6 +416,35 @@
                 fprintf( '==>> %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1));
 
          end
+         
+          if show_output == 33
+
+                subplot(2,6,1); imshow(imread(char(qimg_path))); %q_img
+                db_imgo1 = strcat(dataset_path,'/images/', db.dbImageFns{idss(1,1),1});  
+                db_imgo2 = strcat(dataset_path,'/images/', db.dbImageFns{idss(2,1),1});  
+                db_imgo3 = strcat(dataset_path,'/images/', db.dbImageFns{idss(3,1),1});
+                db_imgo4 = strcat(dataset_path,'/images/', db.dbImageFns{idss(4,1),1});
+                db_imgo5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(5,1),1});
+                db_img1 = strcat(dataset_path,'/images/', db.dbImageFns{idss(6,1),1});  
+                db_img2 = strcat(dataset_path,'/images/', db.dbImageFns{idss(7,1),1});  
+                db_img3 = strcat(dataset_path,'/images/', db.dbImageFns{idss(8,1),1});  
+                db_img4 = strcat(dataset_path,'/images/', db.dbImageFns{idss(9,1),1});  
+                db_img5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(10,1),1});  
+                
+                subplot(2,6,2); imshow(imread(char(db_imgo1))); %
+                subplot(2,6,3); imshow(imread(char(db_imgo2))); %
+                subplot(2,6,4); imshow(imread(char(db_imgo3))); %
+                subplot(2,6,5); imshow(imread(char(db_imgo4))); %
+                subplot(2,6,6); imshow(imread(char(db_imgo5))); %
+                
+                subplot(2,6,8); imshow(imread(char(db_img1))); %
+                subplot(2,6,9); imshow(imread(char(db_img2))); %
+                subplot(2,6,10); imshow(imread(char(db_img3))); %
+                subplot(2,6,11); imshow(imread(char(db_img4))); %
+                subplot(2,6,12); imshow(imread(char(db_img5))); %
+                fprintf( '==>> %f %f %f %f %f %f %f %f %f %f \n',c_i(1,1), c_i(2,1),c_i(3,1), c_i(4,1) ,c_i(5,1), c_i(6,1), c_i(7,1),c_i(8,1), c_i(9,1) ,c_i(10,1));
+
+         end
         
         
         iTestSample
@@ -295,7 +461,7 @@
         recalls_ori(iTestSample, :)= thisRecall1( min(ns, numReturned) );
         printRecalls(iTestSample)= thisRecall(printN);
         if thisRecall(1) == 0
-  %          fprintf('iTestSample: %i \n',iTestSample);
+          fprintf('iTestSample: %i \n',iTestSample);
   %           plot(ns, recalls(1:iTestSample,:), 'ro-',ns, recalls_ori(1:iTestSample,:), 'go-'); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
 
         end
