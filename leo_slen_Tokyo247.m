@@ -1,8 +1,9 @@
 clc;
 clear all;
-setup;
-system('xinput set-prop 16 "Synaptics Two-Finger Scrolling" 1 0');
-system('xinput set-prop 21 "Synaptics Two-Finger Scrolling" 1 0');
+setup; 
+% check input list 'xinput list'
+system('xinput set-prop 17 "Synaptics Two-Finger Scrolling" 1 0');
+system('xinput set-prop 12 "Synaptics Two-Finger Scrolling" 1 0');
 addpath(genpath(pwd));
 
 %%
