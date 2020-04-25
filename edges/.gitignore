@@ -1,3 +1,7 @@
 /BSR/
 /sweeps*
 /boxes/
+*.mexmaci64
+*.mexma64
+*.mexmw64
+*.mexa64

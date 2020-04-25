@@ -27,8 +27,8 @@
     Top_boxes = 10;
     %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
 
-    iTestSample_Start=24; startfrom =3; show_output = 4;  
-  % iTestSample_Start=1; startfrom =1; show_output = 3;   
+  %   iTestSample_Start=24; startfrom =3; show_output = 4;  
+  iTestSample_Start=1; startfrom =1; show_output = 3;   
     %% LEO START
     
     netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
@@ -369,32 +369,27 @@
                    
                end
                
-           % if check_heat >= 1
+            if check_heat >= 1
                
             if num_var_s5 < 3 
                 D_diff = D_diff-mum_var_s5;
             end
               
-            if inegatif == 100  && num_var_s5 < 5  && nnz_black_check > 0
+            if inegatif == 100  && num_var_s5 < 5 % && nnz_black_check > 0
               D_diff = norm(D_diff-sum(S8(:))); 
             end
             
-           % end
+            end
             
 
              if show_output == 4
                  fprintf(' %f -> %f %f %f %f %f %f %f \n',ds_pre(i,1), D_diff, num_var_s5,sum_var_s5, mum_var_s5,sol_4,sol_5,sol_6);
                  y = [ds_pre(i,1) D_diff sum(S8(:)) inegatif sum(S5(:)) mum_var_s5 num_var_s5 nnz_black_check];
-                 q_imgg = imread(char(qimg_path));
-                 subplot(2,3,1); imshow(q_imgg); %q_img
-                 db_imgg = imread(char(db_img));
-                subplot(2,3,2); imshow(db_imgg); %
-                
-                q_imgg_mat_box = img_Bbox(q_imgg);
-                
-                subplot(2,3,3); h = heatmap(S8);
+                     subplot(2,3,1); imshow(imread(char(qimg_path))); %q_img
+                subplot(2,3,2); imshow(imread(char(db_img))); %
+                  subplot(2,3,3); h = heatmap(S8);
                 subplot(2,3,4); h = heatmap(y); % with plus is wokring
-                subplot(2,3,5); h = heatmap(S3);
+                 subplot(2,3,5); h = heatmap(S3);
                end
             
            ds_new_top(i,1) = abs(D_diff);
@@ -644,12 +639,4 @@ cmap(1,:)=[0,0,0];
 colormap(cmap)
 caxis([-0.2 0.2]);
 colorbar
-end
-
-function mat_boxes = img_Bbox(db_img)
-im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-I = uint8(im{1,1});
-[bbox, E] =edgeBoxes(I,model);
-[wd, hh] = size(im{1,1});
-mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 end

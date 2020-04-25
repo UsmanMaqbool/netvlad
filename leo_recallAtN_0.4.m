@@ -20,15 +20,11 @@
     evalProg= tic;
     %dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
     %save_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV/vt-2';
-   
-    % detect blackish images  ( plot the boxes)
-    % rearrange + use previous knowledge
-    
     Top_boxes = 10;
-    %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
+    %57.000000 13.000000 50.000000 60.000000 40.000000 1.000000 100.000000 64.000000 5.000000 24.000000 
 
-    iTestSample_Start=24; startfrom =3; show_output = 4;  
-  % iTestSample_Start=1; startfrom =1; show_output = 3;   
+    iTestSample_Start=1; startfrom =1; show_output = 3;  
+    
     %% LEO START
     
     netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
@@ -115,6 +111,7 @@
 
             save(q_feat,'query_full_feat');
         end
+        
         total_top = 100; %100;
  
         q_dbfeat = strrep(q_feat,'.mat','_db_feats.mat');
@@ -156,143 +153,26 @@
             % original dis: 1.25 ds_pre
             db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(i,1),1});  
             
-            ds_pre_inv = 1/ ds_pre(i,1);
-            
-            ds_all_inv = 1./(ds_all);
-            
-            diff_ds_all = zeros(Top_boxes,Top_boxes);
-            diff_ds_all(1:Top_boxes-1,:) = diff(ds_all);
-            diff2_ds_all = diff(diff(ds_all));
+            % subtract the max value
+      
+            ds_all_sub = ds_all(1:Top_boxes,1:Top_boxes);     
+            ds_pre_w =  ds_pre(i,1)- ds_pre_min;
+            ds_all_less = ds_all_sub - ds_pre_min;
+            diff2_ds_all = diff(diff(ds_all_less));
             diff2_ds_all_less = diff2_ds_all;
-            diff2_ds_all_less(diff2_ds_all_less>0) = 0;
-            diff_ds_all_inv = diff(ds_all_inv);
-        
             
-            ds_all_sub = ds_all(1:Top_boxes,1:Top_boxes);
-            ds_all_sub_inv = ds_all_inv(1:Top_boxes,1:Top_boxes);
-            
-            
-            ds_all_less = ds_all_sub-ds_pre(100,1);
-            ds_all_less_inv = ds_all_sub_inv-ds_pre_inv;
-            
-            
-            ds_all_less_mean = mean(ds_all_less(:));
-            ds_all_less_inv_mean = mean(ds_all_less_inv(:));
-            
-            s=sign(ds_all_less); s_inv=sign(ds_all_less);
-            
-            ipositif=sum(s(:)==1);
-            inegatif=sum(s(:)==-1);
-            S_great = s; S_great(S_great<0) = 0; S_great = S_great.*ds_all_less; S_great_n = S_great - ds_all_less_mean;
-            S_less = s; S_less(S_less>0) = 0; S_less = abs(S_less).*ds_all_less; S_less_n = S_less - ds_all_less_mean;
-            S_less_diff = diff(S_less);
-            
-            ipositif_inv=sum(s_inv(:)==1);
-            inegatif_inv=sum(s_inv(:)==-1);
-            S_great_inv = s_inv; S_great_inv(S_great_inv<0) = 0; S_great_inv = S_great_inv.*ds_all_less_inv; S_great_inv_n = S_great_inv - ds_all_less_inv_mean; 
-            S_less_inv = s_inv; S_less_inv(S_less_inv>0) = 0; S_less_inv = abs(S_less_inv).*ds_all_less_inv; S_less_inv_n = S_less_inv - ds_all_less_inv_mean;
+       
+            %diff2_ds_all_less(diff2_ds_all_less>0) = 0;
 
-            %  [S_less_min_inv, S_less_I_inv] = sort(S_less_inv(:));
+      %      ds_all_less_mean = mean(ds_all_less(:));
+        %    ds_all_less_inv_mean = mean(ds_all_less_inv(:));
             
-
-           S_great_mean = sum(S_great(:)/ipositif); S_great_n_mean = sum(S_great_n(:)/ipositif);
-           S_great_inv_mean = sum(S_great_inv(:)/ipositif_inv); S_great_inv_n_mean = sum(S_great_inv_n(:)/ipositif_inv);
-           
-           
-           
-           
-           S_less_mean = sum(sum(S_less/inegatif)); S_less_n_mean = sum(S_less_n(:)/inegatif);
-           S_less_inv_mean = sum(S_less_inv(:)/inegatif_inv); S_less_inv_n_mean = sum(S_less_inv_n(:)/inegatif_inv);
-          
-             
-           S_less_diff = diff(S_less); 
-           S_less_n_diff = sum(sum(S_less_n.*diff_ds_all));
-           S_less_inv_diff = sum(sum(S_less_inv.*diff_ds_all)); S_less_inv_n_diff = sum(sum(S_less_inv_n.*diff_ds_all));
-          
-           
-           
-          %  subplot(2,2,1); h = heatmap(S_less);
-           % subplot(2,2,2); h = heatmap(S_less_n);
-           % subplot(2,2,3); h = heatmap(S_less.*diff_ds_all);
-           % subplot(2,2,4); h = heatmap(S_less_n.*diff_ds_all);
+            s=sign(ds_all_less);% s_inv=sign(ds_all_less);
+            s_top = sign(ds_all_less(1:10,:));
+            inegatif=sum(s_top(:)==-1);            
+            S_less = s; S_less(S_less>0) = 0; S_less = abs(S_less).*ds_all_less;
+            S_less_mul_diff = S_less(1:Top_boxes-2,:).*diff2_ds_all_less;
             
-           % subplot(2,2,3); h = heatmap(S_less_inv);
-           % subplot(2,2,4); h = heatmap(S_less_inv_n);
-            
-           
-           
-            s_delta_all = 0;
-    
-            
-            s_delta_mat = 0;
-            s_dis = 0;
-            for jj = 1:Top_boxes
-                S_less_col = S_less(:,jj);
-                s_near_mat = [];
-                for jjj = 1:Top_boxes-1
-                                           
-                        s_dis = abs(ds_pre(i,1) - S_less_col(jjj));
-                        s_less_difference = abs(S_less_col(jjj+1)-S_less_col(jjj));
-                        if s_less_difference > 0 && s_less_difference <= 0.02 && s_dis > .4
-                            if isempty(s_near_mat)
-                                
-                                
-                                s_near_mat = [s_near_mat; S_less_col(jjj);S_less_col(jjj+1)];
-                                
-                            else
-                                s_near_mat = [s_near_mat; S_less_col(jjj+1)];
-                            end
-                            s_delta = exp(s_dis)*(s_less_difference)^jj;
-                            s_delta_mat = s_delta_mat + s_delta;
-                        elseif s_less_difference > 0 && s_less_difference > 0.03
-                           % s_delta_mat = [s_delta_mat s_near_mat];
-                            s_near_mat = [];
-                        end
-                    
-                   
-                end
-               % s_delta_mat = [s_delta_mat s_near_mat];
-                s_near_mat = [];
-            end
-                   
-            
-            D_diff = ds_pre(i,1); %-s_delta_all;
-            
-            
-            D = sum(sum(S_less(1:Top_boxes)));
-            boxes_per_less = (Top_boxes*Top_boxes)/inegatif;
-            % Create plots
-            if show_output == 2
-
-                subplot(2,2,1); imshow(imread(char(qimg_path))); %q_img
-                subplot(2,2,2); imshow(imread(char(db_img))); %
-
-                
-                subplot(2,2,3); h = heatmap(diff2_ds_all_less*ds_pre_inv);
-                subplot(2,2,4); h = heatmap(diff2_ds_all*ds_pre_inv); % with plus is wokring
-              %  subplot(2,2,1); h = heatmap(diff_ds_all/ds_pre_inv);
-              %  subplot(2,2,2); h = heatmap(diff2_ds_all/ds_pre_inv);
-%                fprintf( '==>> Distance %f ~ Greator Values %f %f \n Less Values %f %f ~ Min %f \n',ds_pre(i,1), s_delta_all,ipositif, S_great, inegatif, S_less);
-              %  fprintf('%f %f %f %f %f %f %f %f %f %f\n',(Top_boxes*Top_boxes)/inegatif, D_diff, D_diff+ds_all_less_mean, D_diff-(ds_all_less_mean/D), D_diff-s_delta_mat, D_diff+s_delta_mat,ds_all_less_mean+s_delta_mat, s_delta_mat/ds_all_less_mean, D/(D_diff-ds_all_less_mean), D);
-               % fprintf('\n For %f %f %f %f %f %f %f %f %f', D_diff, D, boxes_per_less, Top_boxes, inegatif, s_delta_mat, ds_all_less_mean, mean(S_less_diff(:)),min(S_less_diff(:)));
-                fprintf('%f -> %f %f %f %f %f %f %f %f \n',D_diff,D_diff+ S_less_mean,D_diff+ S_less_n_mean, D_diff+S_less_inv_mean,D_diff+ S_less_inv_n_mean,D_diff+ S_less_diff,D_diff+ S_less_n_diff, D_diff+S_less_inv_diff,D_diff+ S_less_inv_n_diff);
-
-            end
-            
-         %   exp3_diff = diff2_ds_all*ds_pre_inv;
-          %  exp3_diff = ds_all(1:Top_boxes-2,:)-exp3_diff;
-           % exp3_diff = exp3_diff+D_diff;
-            
-            deri_diff =  diff2_ds_all*ds_pre_inv;%diff2_ds_all*ds_pre_inv;%diff2_ds_all/ds_pre_inv;% diff_ds_all/ds_pre_inv; %diff2_ds_all*ds_pre_inv;
-       %     min_sless = min(S_less_diff(:));
-            
-         %       D_diff = ds_pre(i,1)+abs(D_diff - abs(min(S_less_diff(:))))*abs());
-                 
-            
-                 
-               
-               diff_s_less = diff(S_less);
-               sol_1 = sum(diff_s_less(:));
                
                S1 = S_less; S1_mean = mean(S1(:),'omitnan');
                S1(S1>S1_mean) = NaN;
@@ -301,8 +181,8 @@
                S3 = S2; S3_mean = mean(S3(:),'omitnan');
                S3(S3>S3_mean) = NaN;
                S1(isnan(S1)) = 0;
-                S2(isnan(S2)) = 0;
-                S3(isnan(S3)) = 0;
+               S2(isnan(S2)) = 0;
+               S3(isnan(S3)) = 0;
                S1_diff = diff(S1);
                S2_diff = diff(S2);
                S3_diff = diff(S3);
@@ -311,6 +191,7 @@
                
                S1(isnan(S1)) = 0;
                S7 = S3(1:Top_boxes-2,:).*diff2_ds_all_less;
+            %   S7 = S3.*diff2_ds_all_less;
                S8 = S7.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
                S6 = S5.*ds_pre(i,1); %S_less(1:Top_boxes-1,:);
                sol_2 = sum(S1(:));
@@ -320,14 +201,97 @@
                sol_6 = sum(S8(:)); 
                
                
+               S3_diff = diff(S3);
+               
                Var_S5 = var(S3,1);
                num_var_s5 = nnz(Var_S5);
                sum_var_s5 = sum(Var_S5);
                mum_var_s5 = num_var_s5*sum_var_s5;
                
-              
+               Var_var_S5 = var(Var_S5);
                
-              heat3 = diff2_ds_all_less*ds_pre_inv;
+               D_diff = ds_pre(i,1);
+               
+               sum_diff2_ds_all = sum(diff2_ds_all);
+               
+               
+               
+               for jj = 1:Top_boxes
+                  
+                   S3_nnz = nnz(S3(:,jj));
+                   if S3_nnz < 2
+                       sum_diff2_ds_all(jj) = 0;
+                       
+                   end
+                   
+                   
+               end
+               nnz_black_check = nnz(sum_diff2_ds_all);
+               
+               top_candidates = sum_diff2_ds_all;
+              % top_candidates(sum_diff2_ds_all> -0.03)=0;
+               
+                s_delta_all = 0;
+
+
+                s_delta_mat = 0;
+                s_dis = 0;
+                for jj = 1:Top_boxes
+                S_less_col = S3(:,jj);
+                s_near_mat = [];
+                for jjj = 1:Top_boxes-1
+%                  
+                end
+%                % s_delta_mat = [s_delta_mat s_near_mat];
+%                 s_near_mat = [];
+               end
+%                    
+            
+               
+               
+               
+               
+               
+                           % Create plots
+            if show_output == 2
+
+            %    subplot(2,2,1); imshow(imread(char(qimg_path))); %q_img
+             %   subplot(2,2,2); imshow(imread(char(db_img))); %
+
+                
+             %  subplot(2,2,3); h = heatmap(S6);
+             %  subplot(2,2,4); h = heatmap(S_less);
+               % subplot(2,2,3); h = heatmap(diff2_ds_all_less*ds_pre_inv);
+               % subplot(2,2,4); h = heatmap(diff2_ds_all*ds_pre_inv); % with plus is wokring
+              %  subplot(2,2,1); h = heatmap(diff_ds_all/ds_pre_inv);
+              %  subplot(2,2,2); h = heatmap(diff2_ds_all/ds_pre_inv);
+%             fprintf( '==>> Distance %f ~ Greator Values %f %f \n Less Values %f %f ~ Min %f \n',ds_pre(i,1), s_delta_all,ipositif, S_great, inegatif, S_less);
+              %  fprintf('%f %f %f %f %f %f %f %f %f %f\n',(Top_boxes*Top_boxes)/inegatif, D_diff, D_diff+ds_all_less_mean, D_diff-(ds_all_less_mean/D), D_diff-s_delta_mat, D_diff+s_delta_mat,ds_all_less_mean+s_delta_mat, s_delta_mat/ds_all_less_mean, D/(D_diff-ds_all_less_mean), D);
+               % fprintf('\n For %f %f %f %f %f %f %f %f %f', D_diff, D, boxes_per_less, Top_boxes, inegatif, s_delta_mat, ds_all_less_mean, mean(S_less_diff(:)),min(S_less_diff(:)));
+%                fprintf('%f -> %f %f %f %f %f %f %f %f \n',D_diff,D_diff+ S_less_mean,D_diff+ S_less_n_mean, D_diff+S_less_inv_mean,D_diff+ S_less_inv_n_mean,D_diff+ S_less_diff,D_diff+ S_less_n_diff, D_diff+S_less_inv_diff,D_diff+ S_less_inv_n_diff);
+
+          %  end
+               fprintf(' %f -> %f , Total_num:%f Sum:%f Mul:%f Neg_totl:%f -> %f %f \n',ds_pre(i,1), D_diff-(mum_var_s5/ds_pre_max), num_var_s5/Top_boxes,sum_var_s5/Top_boxes, mum_var_s5/(Top_boxes),inegatif/(Top_boxes*Top_boxes),norm(D_diff-sum(S8(:))),sol_6);
+                y = [Var_var_S5 num_var_s5 sum_var_s5 mum_var_s5];
+
+                subplot(2,4,1); imshow(imread(char(qimg_path))); 
+                subplot(2,4,2); heatmap(S3);    
+                subplot(2,4,3); plot_mat(S3_diff) ; 
+                subplot(2,4,4); bar (sum_diff2_ds_all);
+                
+                subplot(2,4,5); imshow(imread(char(db_img)));    
+                subplot(2,4,6); plot_mat(S3(1:10,:));  
+                subplot(2,4,7); plot_mat(S3_diff(1:10,:)); 
+                subplot(2,4,8); bar(top_candidates); %Var_S5
+                Var_S5
+                 
+                
+                
+         
+                
+               end
+               
+             % heat3 = diff2_ds_all_less*ds_pre_inv;
               %check_heat = sum(S8(2,:,:));
               check_heat = 0;
               %D_diff = ds_pre(i,1)-; %-s_delta_all;
@@ -343,131 +307,24 @@
                     end
                end
                
-             for jj = 1:Top_boxes
-                  
-                   S3_nnz = nnz(S3(:,jj));
-                   if S3_nnz < 2
-                       sum_diff2_ds_all(jj) = 0;
-                       
-                   end
-                   
-                   
-               end
-               nnz_black_check = nnz(sum_diff2_ds_all);
-               
-               top_candidates = sum_diff2_ds_all;
-               
-               check_heat = 0;
-%              D_diff = ds_pre(i,1)-; %-s_delta_all;
-               for jj = 1:Top_boxes
-                   S8_col = S8(:,jj);
-                    
-                    hm = find(S8_col~=0, 1, 'first');
-                    if hm < 2 
-                        check_heat = check_heat+ 1;
-                    end
-                   
-               end
-               
-           % if check_heat >= 1
-               
-            if num_var_s5 < 3 
-                D_diff = D_diff-mum_var_s5;
-            end
+          
               
-            if inegatif == 100  && num_var_s5 < 5  && nnz_black_check > 0
-              D_diff = norm(D_diff-sum(S8(:))); 
-            end
-            
+              
+           % if inegatif/(Top_boxes*Top_boxes) == 1 %&& num_var_s5 < 3 
+           %   D_diff = norm(D_diff-sum(S8(:)));  %Top_boxes0/(D*ds_pre_inv);
            % end
-            
+           % if nnz_black_check < 4
+           D_diff = ds_pre_min+sum(top_candidates)/ds_pre_w;
+          
+          %  end
 
-             if show_output == 4
-                 fprintf(' %f -> %f %f %f %f %f %f %f \n',ds_pre(i,1), D_diff, num_var_s5,sum_var_s5, mum_var_s5,sol_4,sol_5,sol_6);
-                 y = [ds_pre(i,1) D_diff sum(S8(:)) inegatif sum(S5(:)) mum_var_s5 num_var_s5 nnz_black_check];
-                 q_imgg = imread(char(qimg_path));
-                 subplot(2,3,1); imshow(q_imgg); %q_img
-                 db_imgg = imread(char(db_img));
-                subplot(2,3,2); imshow(db_imgg); %
-                
-                q_imgg_mat_box = img_Bbox(q_imgg);
-                
-                subplot(2,3,3); h = heatmap(S8);
-                subplot(2,3,4); h = heatmap(y); % with plus is wokring
-                subplot(2,3,5); h = heatmap(S3);
-               end
+             
+        %    D_diff = D_diff-mum_var_s5;
             
            ds_new_top(i,1) = abs(D_diff);
              
 
          ds_all = [];
-%                S3_diff = diff(S3);
-%                
-%                Var_S5 = var(S3,1);
-%                num_var_s5 = nnz(Var_S5);
-%                sum_var_s5 = sum(Var_S5);
-%                mum_var_s5 = num_var_s5*sum_var_s5;
-%                
-%                Var_var_S5 = var(Var_S5);
-%                
-%                D_diff = ds_pre(i,1);
-%                
-%                sum_diff2_ds_all = sum(diff2_ds_all);
-%                
-%                
-%                
-%                for jj = 1:Top_boxes
-%                   
-%                    S3_nnz = nnz(S3(:,jj));
-%                    if S3_nnz < 2
-%                        sum_diff2_ds_all(jj) = 0;
-%                        
-%                    end
-%                    
-%                    
-%                end
-%                nnz_black_check = nnz(sum_diff2_ds_all);
-%                
-%                top_candidates = sum_diff2_ds_all;
-%               % top_candidates(sum_diff2_ds_all> -0.03)=0;
-%                
-%                 s_delta_all = 0;
-% 
-% 
-%                 s_delta_mat = 0;
-%                 s_dis = 0;
-%                 for jj = 1:Top_boxes
-%                 S_less_col = S3(:,jj);
-%                 s_near_mat = [];
-%                 for jjj = 1:Top_boxes-1
-% %                  
-%                 end
-% %                % s_delta_mat = [s_delta_mat s_near_mat];
-% %                 s_near_mat = [];
-%                end
-% %                    
-%             
-%                
-%                
-%                
-%              % heat3 = diff2_ds_all_less*ds_pre_inv;
-%               %check_heat = sum(S8(2,:,:));
-%               check_heat = 0;
-%               %D_diff = ds_pre(i,1)-; %-s_delta_all;
-%                for jj = 1:Top_boxes
-%                    S8_col = S8(:,jj);
-%                    check_heat_mean = mean(S8_col);
-% 
-%                     S8_col(S8_col<check_heat_mean) = 0;
-% 
-%                     hm = nnz(S8_col);
-%                     if hm >= 2 
-%                         check_heat = check_heat+ sum(S8_col);
-%                     end
-%                end
-%                
-%           
-% 
 
 
         end
@@ -551,14 +408,6 @@
         thisRecall1= cumsum( isPos(iTest, ids) ) > 0; % yahan se get karta hai %db.cp (close position)
         recalls_ori(iTestSample, :)= thisRecall1( min(ns, numReturned) );
         printRecalls(iTestSample)= thisRecall(printN);
-        
-        thisRecall_idx = find(thisRecall~=0, 1, 'first');
-        thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
-        
-        if thisRecall_idx-thisRecall1_idx > 1
-           fprintf('iTestSample: %i \n',iTestSample);
-        end
-        
         if thisRecall(1) == 0
           fprintf('iTestSample: %i \n',iTestSample);
   %           plot(ns, recalls(1:iTestSample,:), 'ro-',ns, recalls_ori(1:iTestSample,:), 'go-'); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
@@ -644,12 +493,4 @@ cmap(1,:)=[0,0,0];
 colormap(cmap)
 caxis([-0.2 0.2]);
 colorbar
-end
-
-function mat_boxes = img_Bbox(db_img)
-im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-I = uint8(im{1,1});
-[bbox, E] =edgeBoxes(I,model);
-[wd, hh] = size(im{1,1});
-mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 end
