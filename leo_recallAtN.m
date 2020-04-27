@@ -27,7 +27,7 @@
     Top_boxes = 10;
     %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
 
-    iTestSample_Start=24; startfrom =3; show_output = 4;  
+    iTestSample_Start=24; startfrom =3; show_output = 44;  %test the boxes
   % iTestSample_Start=1; startfrom =1; show_output = 3;   
     %% LEO START
     
@@ -390,86 +390,48 @@
                  db_imgg = imread(char(db_img));
                 subplot(2,3,2); imshow(db_imgg); %
                 
-                q_imgg_mat_box = img_Bbox(q_imgg);
+               
                 
                 subplot(2,3,3); h = heatmap(S8);
                 subplot(2,3,4); h = heatmap(y); % with plus is wokring
                 subplot(2,3,5); h = heatmap(S3);
-               end
-            
-           ds_new_top(i,1) = abs(D_diff);
+              
+                
+             end
+             if show_output == 44
+                 
+                
+                q_imgg_mat_box = img_Bbox(qimg_path,model);
+                db_imgg_mat_box = img_Bbox(db_img,model);
+                [row,col,value] = find(S8~=0);
+                
+                q_imgg = imread(char(qimg_path));
+               
+                db_imgg = imread(char(db_img));
+                subplot(2,3,2); imshow(db_imgg); %
+                
+                qqq_img = q_imgg;
+                dbb_img = db_imgg;
+                
+                for jjj=1:Top_boxes %length(row)
+                    
+                    qqq_img = draw_boxx(qqq_img,q_imgg_mat_box(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',q_imgg_mat_box(row(jjj),1:4),'LineWidth',3);
+                    dbb_img = draw_boxx(dbb_img,db_imgg_mat_box(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',q_imgg_mat_box(row(jjj),1:4),'LineWidth',3);
+                    
+                    
+                    subplot(1,2,1); imshow(qqq_img); %q_img
+                    subplot(1,2,2); imshow(dbb_img); %
+                  
+                end
+                
+             end   
              
+             
+             
+           ds_new_top(i,1) = abs(D_diff);
+            
 
          ds_all = [];
-%                S3_diff = diff(S3);
-%                
-%                Var_S5 = var(S3,1);
-%                num_var_s5 = nnz(Var_S5);
-%                sum_var_s5 = sum(Var_S5);
-%                mum_var_s5 = num_var_s5*sum_var_s5;
-%                
-%                Var_var_S5 = var(Var_S5);
-%                
-%                D_diff = ds_pre(i,1);
-%                
-%                sum_diff2_ds_all = sum(diff2_ds_all);
-%                
-%                
-%                
-%                for jj = 1:Top_boxes
-%                   
-%                    S3_nnz = nnz(S3(:,jj));
-%                    if S3_nnz < 2
-%                        sum_diff2_ds_all(jj) = 0;
-%                        
-%                    end
-%                    
-%                    
-%                end
-%                nnz_black_check = nnz(sum_diff2_ds_all);
-%                
-%                top_candidates = sum_diff2_ds_all;
-%               % top_candidates(sum_diff2_ds_all> -0.03)=0;
-%                
-%                 s_delta_all = 0;
-% 
-% 
-%                 s_delta_mat = 0;
-%                 s_dis = 0;
-%                 for jj = 1:Top_boxes
-%                 S_less_col = S3(:,jj);
-%                 s_near_mat = [];
-%                 for jjj = 1:Top_boxes-1
-% %                  
-%                 end
-% %                % s_delta_mat = [s_delta_mat s_near_mat];
-% %                 s_near_mat = [];
-%                end
-% %                    
-%             
-%                
-%                
-%                
-%              % heat3 = diff2_ds_all_less*ds_pre_inv;
-%               %check_heat = sum(S8(2,:,:));
-%               check_heat = 0;
-%               %D_diff = ds_pre(i,1)-; %-s_delta_all;
-%                for jj = 1:Top_boxes
-%                    S8_col = S8(:,jj);
-%                    check_heat_mean = mean(S8_col);
-% 
-%                     S8_col(S8_col<check_heat_mean) = 0;
-% 
-%                     hm = nnz(S8_col);
-%                     if hm >= 2 
-%                         check_heat = check_heat+ sum(S8_col);
-%                     end
-%                end
-%                
-%           
-% 
-
-
         end
         
         %  SLEN_top(i,1) = i; SLEN_top(i,2) = aa;
@@ -646,10 +608,44 @@ caxis([-0.2 0.2]);
 colorbar
 end
 
-function mat_boxes = img_Bbox(db_img)
+function mat_boxes = img_Bbox(db_img,model)
 im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
 I = uint8(im{1,1});
 [bbox, E] =edgeBoxes(I,model);
 [wd, hh] = size(im{1,1});
 mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
+end
+
+function img = draw_boxx(I,bb)
+
+bb=[bb(1)+3 bb(2)+3 bb(3)+bb(1)-3 bb(4)+bb(2)-3];
+
+% 
+% y1 = bb(1)+3;
+% y2 = bb(1)+bb(3)-3;
+% x1 = bb(2)+3;
+% x2 = bb(2)+bb(4)-3;
+% 
+% if x1 == 0
+%     x1 = 1;
+% end
+% if y1 == 0
+%     y1 = 1;
+% end
+% if x2 > 30
+%     x2 = 30;
+% end
+% if y2 > 40
+%     y2 = 40;
+% end
+% if bboxes(3) < 2 && x2 > 30
+%     x1 = x1-2;
+% end
+% if bboxes(4) < 2 && y2 > 40
+%     y1 = y1-2;
+% end
+
+
+img = insertShape(I,'Rectangle',bb,'LineWidth',3);
+
 end
