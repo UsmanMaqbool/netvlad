@@ -103,20 +103,17 @@
         if exist(q_feat, 'file')
             load(q_feat);
         else
-           % im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
+            im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
-          %  I = uint8(im{1,1});
-          %  [bbox, E] =edgeBoxes(I,model);
-            
-            bbox = img_Bbox(qimg_path,model);
-
+            I = uint8(im{1,1});
+            [bbox, E] =edgeBoxes(I,model);
             [wd, hh] = size(im{1,1});
             mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
             im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
             query_full_feat= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
 
-            save(q_feat,'query_full_feat', 'bbox');
+            save(q_feat,'query_full_feat');
         end
         total_top = 100; %100;
  
@@ -128,11 +125,9 @@
             for jj = 1:total_top
 
                     db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
-%                     im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-%                     I = uint8(im{1,1});
-%                     [bbox, E] =edgeBoxes(I,model);
-
-                    bbox = img_Bbox(db_img,model);
+                    im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
+                    I = uint8(im{1,1});
+                    [bbox, E] =edgeBoxes(I,model);
                     [wd, hh] = size(im{1,1});
                     mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
@@ -143,7 +138,7 @@
                     fprintf( '==>> %i ~ %i/%i ',jj,iTestSample,total_top );
 
             end
-            save(q_dbfeat,'feats_file','bbox');
+            save(q_dbfeat,'feats_file');
             
         end
         SLEN_top = zeros(total_top,2); 
