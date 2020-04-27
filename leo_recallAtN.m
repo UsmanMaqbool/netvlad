@@ -27,7 +27,7 @@
     Top_boxes = 10;
     %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
 
-    iTestSample_Start=24; startfrom =3; show_output = 44;  %test the boxes
+    iTestSample_Start=24; startfrom =15; show_output = 44;  %test the boxes
   % iTestSample_Start=1; startfrom =1; show_output = 3;   
     %% LEO START
     
@@ -278,7 +278,56 @@
                 fprintf('%f -> %f %f %f %f %f %f %f %f \n',D_diff,D_diff+ S_less_mean,D_diff+ S_less_n_mean, D_diff+S_less_inv_mean,D_diff+ S_less_inv_n_mean,D_diff+ S_less_diff,D_diff+ S_less_n_diff, D_diff+S_less_inv_diff,D_diff+ S_less_inv_n_diff);
 
             end
-            
+                if show_output == 44
+                 
+                
+                imgg_mat_box_q = img_Bbox(qimg_path,model);
+                imgg_mat_box_db = img_Bbox(db_img,model);
+                [row,col,value] = find(diff_s_less~=0);
+                
+                q_imgg = imread(char(qimg_path));
+              
+
+                db_imgg = imread(char(db_img));
+              
+                
+                qqq_img = q_imgg;
+                dbb_img = db_imgg;
+                
+                box_var_db = [];
+                box_var_q = [];
+                
+                for jjj=1:length(row) %Top_boxes
+                    
+                    qq_img = draw_boxx(q_imgg,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                    dd_img = draw_boxx(db_imgg,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                    
+                    qqq_img = draw_boxx(qqq_img,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                    dbb_img = draw_boxx(dbb_img,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
+                    
+                    
+                    bb_q = imgg_mat_box_q(col(jjj),1:4);
+                    
+                    box_var_q = [box_var_q ; imgg_mat_box_q(col(jjj),1:4) (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2 ];
+                    
+                    bb_db = imgg_mat_box_db(row(jjj),1:4);
+                    
+                    box_var_db = [box_var_db ; imgg_mat_box_db(row(jjj),1:4) (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2 ];
+                  %  subplot(2,2,1); imshow(qq_img); %q_img
+                  %  subplot(2,2,2); imshow(dd_img); %
+                    
+                  
+                  
+                end
+                std_box_var_q = std(im2double(box_var_q),0,1);
+                subplot(2,2,1); bar(std_box_var_q(3:6)); %q_img
+                std_box_var_db = std(im2double(box_var_db),0,1);
+                subplot(2,2,2); bar(std_box_var_db(3:6)); %q_img
+                
+                  subplot(2,2,3); imshow(qqq_img); %q_img
+                    subplot(2,2,4); imshow(dbb_img); %
+             end   
+             
          %   exp3_diff = diff2_ds_all*ds_pre_inv;
           %  exp3_diff = ds_all(1:Top_boxes-2,:)-exp3_diff;
            % exp3_diff = exp3_diff+D_diff;
@@ -398,38 +447,11 @@
               
                 
              end
-             if show_output == 44
-                 
-                
-                q_imgg_mat_box = img_Bbox(qimg_path,model);
-                db_imgg_mat_box = img_Bbox(db_img,model);
-                [row,col,value] = find(S8~=0);
-                
-                q_imgg = imread(char(qimg_path));
-               
-                db_imgg = imread(char(db_img));
-                subplot(2,3,2); imshow(db_imgg); %
-                
-                qqq_img = q_imgg;
-                dbb_img = db_imgg;
-                
-                for jjj=1:Top_boxes %length(row)
-                    
-                    qqq_img = draw_boxx(qqq_img,q_imgg_mat_box(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',q_imgg_mat_box(row(jjj),1:4),'LineWidth',3);
-                    dbb_img = draw_boxx(dbb_img,db_imgg_mat_box(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',q_imgg_mat_box(row(jjj),1:4),'LineWidth',3);
-                    
-                    
-                    subplot(1,2,1); imshow(qqq_img); %q_img
-                    subplot(1,2,2); imshow(dbb_img); %
-                  
-                end
-                
-             end   
-             
+         
              
              
            ds_new_top(i,1) = abs(D_diff);
-            
+           
 
          ds_all = [];
         end
@@ -613,13 +635,31 @@ im= vl_imreadjpeg({char(db_img)},'numThreads', 12);
 I = uint8(im{1,1});
 [bbox, E] =edgeBoxes(I,model);
 [wd, hh] = size(im{1,1});
-mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
+
+bboxes=[];
+gt=[111	98	25	101];
+
+b_size = size(bbox,1); 
+for ii=1:b_size
+     bb=bbox(ii,:);
+     square = bb(3)*bb(4);
+     if square <2*gt(3)*gt(4)
+        bboxes=[bbox;bb];
+     end
+end
+
+mat_boxes = uint8(bboxes); 
 end
 
 function img = draw_boxx(I,bb)
 
-bb=[bb(1)+3 bb(2)+3 bb(3)+bb(1)-3 bb(4)+bb(2)-3];
+%bb(1)
+%bb(2)
+%bb(3)+bb(1)
+%bb(4)+bb(2)
 
+bb=[bb(1) bb(2) bb(3)+bb(1) bb(4)+bb(2)];
+%bb
 % 
 % y1 = bb(1)+3;
 % y2 = bb(1)+bb(3)-3;
