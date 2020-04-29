@@ -26,7 +26,7 @@
     
     %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
 
-    iTestSample_Start=1; startfrom =1; show_output = 33;  %test the boxes
+    iTestSample_Start=1; startfrom =1; show_output = 3;  %test the boxes
   % iTestSample_Start=1; startfrom =1; show_output = 3;   
     %% LEO START
     
@@ -131,9 +131,9 @@
             for jj = 1:total_top
 
                     db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
-%                     im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-%                     I = uint8(im{1,1});
-%                     [bbox, E] =edgeBoxes(I,model);
+                    im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
+                    I = uint8(im{1,1});
+                    [bbox, E] =edgeBoxes(I,model);
                        
                     [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
                    
@@ -433,7 +433,7 @@
                 D_diff = D_diff-mum_var_s5;
             end
               
-            if inegatif == 100  && num_var_s5 < 5  && nnz_black_check > 0
+            if inegatif == 100  && num_var_s5 < 5  %&& nnz_black_check > 0
               D_diff = norm(D_diff-sum(S8(:))); 
             end
             
