@@ -24,10 +24,13 @@
     % detect blackish images  ( plot the boxes)
     % rearrange + use previous knowledge
     
-    %24 - > 3.000000 15.000000 11.000000 45.000000 68.000000 
-     vt_type = 2;
-    iTestSample_Start=1; startfrom =1; show_output = 3;  %test the boxes
-  % iTestSample_Start=1; startfrom =1; show_output = 3;   
+%==>>==>> 11.000000 68.000000 3.000000 75.000000 70.000000 
+ 
+
+    
+     vt_type = 3;
+ %iTestSample_Start=24; startfrom =68; show_output = 43;  %test the boxes
+    iTestSample_Start=24; startfrom = 1; show_output =3;   
     %% LEO START
     
     netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
@@ -71,7 +74,7 @@
  
     dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
     
-   
+   inegatif_i = [];
     if vt_type == 2
          save_path = '/home/leo/docker_ws/datasets/vt-2';
 
@@ -229,6 +232,7 @@
             
             ipositif=sum(s(:)==1);
             inegatif=sum(s(:)==-1);
+            inegatif_i=[inegatif_i ;inegatif];
             S_great = s; S_great(S_great<0) = 0; S_great = S_great.*ds_all_less; S_great_n = S_great - ds_all_less_mean;
             S_less = s; S_less(S_less>0) = 0; S_less = abs(S_less).*ds_all_less; S_less_n = S_less - ds_all_less_mean;
             S_less_diff = diff(S_less);
@@ -367,8 +371,12 @@
                sol_6 = sum(S8(:)); 
                
                
-               Var_S5 = var(S3,1);
+        Var_S5 = var(S3,1);
+               Var_S5_row = var(S3,0);
                num_var_s5 = nnz(Var_S5);
+               
+               sum_var_s5_row = sum(S3,2);
+               num_var_s5_row = nnz(sum_var_s5_row);
                sum_var_s5 = sum(Var_S5);
                mum_var_s5 = num_var_s5*sum_var_s5;
                
@@ -399,7 +407,7 @@
                    end
                    
                    
-               end
+            end
                nnz_black_check = nnz(sum_diff2_ds_all);
                
                top_candidates = sum_diff2_ds_all;
@@ -415,24 +423,55 @@
                     end
                    
                end
-               if show_output == 45
-                 
-                [row,col,value] = find(diff_s_less~=0);
-                
-                q_imgg = imread(char(qimg_path));
+               norms_Avg = 0;
               
-
-                db_imgg = imread(char(db_img));
-              
-                
-                qqq_img = q_imgg;
-                dbb_img = db_imgg;
+           [row,col,value] = find(S3~=0);
+            if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_db)
                 
                 box_var_db = [];
                 box_var_q = [];
-                
-                        for jjj=1:length(row) %Top_boxes
+                AAsum =[];
+                norms= [];
+                    if show_output == 43
+                    q_imgg = imread(char(qimg_path));
+                    db_imgg = imread(char(db_img));
 
+
+                    qqq_img = q_imgg;
+                    dbb_img = db_imgg;
+                    end
+                    %subplot(2,3,1);clf
+                    %  subplot(2,3,2);clf
+                    for jjj=1:length(row) %Top_boxes
+
+
+                        bb_q = imgg_mat_box_q(col(jjj),1:4);
+                       %  jjj
+                       % i
+                        box_var_q_i = [bb_q (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2] ;
+                        box_var_q = [box_var_q ; box_var_q_i];
+                        size(imgg_mat_box_db,2)
+                         row(jjj)
+                        if  size(imgg_mat_box_db,1) < row(jjj)
+                            bb_db = imgg_mat_box_db(1,1:4);
+                        else
+                            bb_db = imgg_mat_box_db(row(jjj),1:4);
+                        end
+                        box_var_db_i = [bb_db (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2];
+                        box_var_db = [box_var_db ; box_var_db_i ];
+
+
+
+                        A = [box_var_db_i ; box_var_q_i];
+                        %  norms_sum = norms+cellfun(@norm,num2cell(A,1));
+
+                        norms = cellfun(@norm,num2cell(A,1));
+
+                        %   AA = [norm(A(1,1:2),2) norm(A(1,3:4),2) norm(A(1,5:6),2) ];
+
+                        AA = abs(box_var_q_i - box_var_db_i);
+                        AAsum = [AAsum ;AA];
+                        if show_output == 43
                             qq_img = draw_boxx(q_imgg,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
                             dd_img = draw_boxx(db_imgg,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
 
@@ -440,33 +479,42 @@
                             dbb_img = draw_boxx(dbb_img,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
 
 
-                            bb_q = imgg_mat_box_q(col(jjj),1:4);
+                            %  subplot(2,2,1); imshow(qq_img); %q_img
+                            %  subplot(2,2,2); imshow(dd_img); %
 
-                            box_var_q = [box_var_q ; imgg_mat_box_q(col(jjj),1:4) (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2 ];
+                            subplot(2,3,1); hold on; plot(box_var_q(jjj,:), 'ro-'); 
 
-                            bb_db = imgg_mat_box_db(row(jjj),1:4);
+                            subplot(2,3,2); hold on; plot(box_var_db(jjj,:), 'ro-'); 
 
-                            box_var_db = [box_var_db ; imgg_mat_box_db(row(jjj),1:4) (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2 ];
-                          %  subplot(2,2,1); imshow(qq_img); %q_img
-                          %  subplot(2,2,2); imshow(dd_img); %
+                            std_box_var_q = std(im2double(box_var_q_i),0,1);
+                            % subplot(2,3,1); bar(std_box_var_q); %q_img
+                            std_box_var_db = std(im2double(box_var_db_i),0,1);
+                            % subplot(2,3,2); bar(std_box_var_db); %q_img
 
 
+
+                            subplot(2,3,3); bar(norms); %q_img
+                            subplot(2,3,4); imshow(qqq_img); %q_img
+                            subplot(2,3,5); imshow(dbb_img); %
+                            subplot(2,3,6); bar(mean(AAsum,1)); %q_img
 
                         end
-                std_box_var_q = std(im2double(box_var_q),0,1);
-                subplot(2,2,1); bar(std_box_var_q); %q_img
-                std_box_var_db = std(im2double(box_var_db),0,1);
-                subplot(2,2,2); bar(std_box_var_db); %q_img
-                
-                  subplot(2,2,3); imshow(qqq_img); %q_img
-                    subplot(2,2,4); imshow(dbb_img); %
-                end  
-               
-            if num_var_s5 < 3 
+
+                    end
+                norms_Avg = inegatif/mean(norms(1,3:4));
+
+            end
+            
+            
+            if
+                 D_diff = D_diff+norms_Avg;
+            end
+            if num_var_s5 < 3 &&  num_var_s5_row < 3
                 D_diff = D_diff-mum_var_s5;
+            
             end
               
-            if inegatif == 100  && num_var_s5 < 5 
+            if inegatif == 100  && num_var_s5 < 5 % && num_var_s5 > 1 
               D_diff = norm(D_diff-sum(S8(:))); 
             end
             
@@ -501,8 +549,11 @@
           
         [C c_i] = sortrows(ds_new_top);
         idss = ids;
+        inegatifss = inegatif_i;
         for i=1:total_top
             idss(i,1) = ids(c_i(i,1));
+            inegatifss(i,1) = inegatif_i(c_i(i,1));
+
         end
          if show_output == 3
 
@@ -579,11 +630,33 @@
         
         thisRecall_idx = find(thisRecall~=0, 1, 'first');
         thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
-        
-        if thisRecall_idx-thisRecall1_idx > 1
-           fprintf('iTestSample: %i \n',iTestSample);
+        fprintf('PLEN Recall: %i and Original Recall: %i \n',thisRecall_idx, thisRecall1_idx );
+        if ~(isempty(thisRecall_idx) && isempty(thisRecall1_idx))
+          if  ((thisRecall_idx-thisRecall1_idx) >= 1) 
+               fprintf('iTestSample: %i \n',iTestSample);
+     
+          end
         end
-        
+        if show_output == 45
+               fprintf('iTestSample: %i \n',iTestSample);
+               figure;
+               subplot(2,2,1);
+               plot(box_var_db(c_i(1,1),:), 'ro-'); hold on
+               plot(box_var_db(c_i(2,1),:), 'ro-'); hold on
+               plot(box_var_db(c_i(3,1),:), 'ro-'); hold on
+               plot(box_var_db(c_i(4,1),:), 'ro-'); hold on
+               plot(box_var_db(c_i(5,1),:), 'ro-'); hold on
+               plot(box_var_db(c_i(thisRecall_idx,1),:), 'go-'); hold on
+               plot(box_var_db(thisRecall1_idx,:), 'bo-'); hold on
+                subplot(2,2,2);imshow(imread(char(qimg_path)));
+
+                 subplot(2,2,3);  
+                 db_imgo1 = strcat(dataset_path,'/images/', db.dbImageFns{ids(c_i(thisRecall_idx,1),1),1});  
+                 imshow(imread(char(db_imgo1))); %
+                  subplot(2,2,4);  
+                 db_imgo2 = strcat(dataset_path,'/images/', db.dbImageFns{ids(thisRecall1_idx,1),1});  
+                 imshow(imread(char(db_imgo2))); %
+        end
         if thisRecall(1) == 0
           fprintf('iTestSample: %i \n',iTestSample);
   %           plot(ns, recalls(1:iTestSample,:), 'ro-',ns, recalls_ori(1:iTestSample,:), 'go-'); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
