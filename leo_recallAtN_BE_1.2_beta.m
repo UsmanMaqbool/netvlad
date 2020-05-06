@@ -24,12 +24,13 @@
     % detect blackish images  ( plot the boxes)
     % rearrange + use previous knowledge
     
-%11.000000 3.000000 75.000000 68.000000 70.000000 (6)
+%==>>==>> 11.000000 68.000000 3.000000 75.000000 70.000000 
+ 
 
     
      vt_type = 3;
-%  iTestSample_Start=24; startfrom =11; show_output = 43;  %test the boxes
- iTestSample_Start=1; startfrom =1; show_output =3;   
+ %iTestSample_Start=24; startfrom =68; show_output = 43;  %test the boxes
+    iTestSample_Start=1; startfrom = 1; show_output =3;   
     %% LEO START
     
     netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
@@ -370,8 +371,12 @@
                sol_6 = sum(S8(:)); 
                
                
-               Var_S5 = var(S3,1);
+                Var_S5 = var(S3,1);
+               Var_S5_row = var(S3,0);
                num_var_s5 = nnz(Var_S5);
+               
+               sum_var_s5_row = sum(S3,2);
+               num_var_s5_row = nnz(sum_var_s5_row);
                sum_var_s5 = sum(Var_S5);
                mum_var_s5 = num_var_s5*sum_var_s5;
                
@@ -419,9 +424,7 @@
                    
                end
                norms_Avg = 0;
-           min_check = abs(min(ds_all(:))-ds_pre_min); 
-           min_check_diff = abs(ds_pre(i,1)-ds_pre_min); 
-
+              
            [row,col,value] = find(S3~=0);
             if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_db)
                 
@@ -430,9 +433,6 @@
                 AAsum =[];
                 norms= [];
                     if show_output == 43
-                        min_check
-                        min_check_diff
-                        inegatif
                     q_imgg = imread(char(qimg_path));
                     db_imgg = imread(char(db_img));
 
@@ -450,8 +450,8 @@
                        % i
                         box_var_q_i = [bb_q (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2] ;
                         box_var_q = [box_var_q ; box_var_q_i];
-                        size(imgg_mat_box_db,2);
-                        % row(jjj);
+                        size(imgg_mat_box_db,2)
+                         row(jjj)
                         if  size(imgg_mat_box_db,1) < row(jjj)
                             bb_db = imgg_mat_box_db(1,1:4);
                         else
@@ -501,26 +501,23 @@
                         end
 
                     end
-                    
                 norms_Avg = inegatif/mean(norms(1,3:4));
-                box_width_height = box_var_db(:,3:4);
-                test_black = mean(box_width_height(:));
+
             end
             
-            if test_black < 100
-                 D_diff = D_diff+abs(sum(S3(:)));
-            end
-               
-            if num_var_s5 < 3 %&& num_var_s5 > 1  
-                D_diff = D_diff-mum_var_s5;
             
-            end
+          if num_var_s5 < 3 &&  num_var_s5_row < 3
+               D_diff = D_diff-mum_var_s5;
+           
+          end
+           
+           
               
-            if inegatif == 100  && num_var_s5 < 5 && min_check > 0.4
-              D_diff = norm(D_diff-sum(S8(:))); 
-            end
+           if inegatif == 100  && num_var_s5 < 5 % && num_var_s5 > 1 
+             D_diff = norm(D_diff-sum(S8(:))); 
+           end
             
-            
+           % D_diff = D_diff-ds_pre_min;
 
              if show_output == 4
                  fprintf(' %f -> %f %f %f %f %f %f %f \n',ds_pre(i,1), D_diff, num_var_s5,sum_var_s5, mum_var_s5,sol_4,sol_5,sol_6);
@@ -539,21 +536,32 @@
                 
              end
          
-             
-             
+           
+           p_diff_aplha(i,1) = exp(mum_var_s5/ds_pre(i,1));
+         
            ds_new_top(i,1) = abs(D_diff);
            
 
          ds_all = [];
         end
         
+        p_diff_beta = sum(p_diff_aplha(:));
+        for i=1:total_top
+            pdiff(i,1) = p_diff_aplha(i,1) / (1+ p_diff_beta);
+          
+        end
+            
+           
+        
         %  SLEN_top(i,1) = i; SLEN_top(i,2) = aa;
           
         [C c_i] = sortrows(ds_new_top);
-        idss = ids;
+        [D d_i] = sortrows(pdiff,'descend' );
+        idss = ids; pdiffs = pdiff;
         inegatifss = inegatif_i;
         for i=1:total_top
             idss(i,1) = ids(c_i(i,1));
+            pdiffs(i,1) = ids(d_i(i,1));
             inegatifss(i,1) = inegatif_i(c_i(i,1));
 
         end
@@ -594,11 +602,11 @@
                 db_imgo3 = strcat(dataset_path,'/images/', db.dbImageFns{idss(3,1),1});
                 db_imgo4 = strcat(dataset_path,'/images/', db.dbImageFns{idss(4,1),1});
                 db_imgo5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(5,1),1});
-                db_img1 = strcat(dataset_path,'/images/', db.dbImageFns{idss(6,1),1});  
-                db_img2 = strcat(dataset_path,'/images/', db.dbImageFns{idss(7,1),1});  
-                db_img3 = strcat(dataset_path,'/images/', db.dbImageFns{idss(8,1),1});  
-                db_img4 = strcat(dataset_path,'/images/', db.dbImageFns{idss(9,1),1});  
-                db_img5 = strcat(dataset_path,'/images/', db.dbImageFns{idss(10,1),1});  
+                db_img1 = strcat(dataset_path,'/images/', db.dbImageFns{pdiffs(6,1),1});  
+                db_img2 = strcat(dataset_path,'/images/', db.dbImageFns{pdiffs(7,1),1});  
+                db_img3 = strcat(dataset_path,'/images/', db.dbImageFns{pdiffs(8,1),1});  
+                db_img4 = strcat(dataset_path,'/images/', db.dbImageFns{pdiffs(9,1),1});  
+                db_img5 = strcat(dataset_path,'/images/', db.dbImageFns{pdiffs(10,1),1});  
                 
                 subplot(2,6,2); imshow(imread(char(db_imgo1))); %
                 subplot(2,6,3); imshow(imread(char(db_imgo2))); %
@@ -634,7 +642,7 @@
         thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
         fprintf('PLEN Recall: %i and Original Recall: %i \n',thisRecall_idx, thisRecall1_idx );
         if ~(isempty(thisRecall_idx) && isempty(thisRecall1_idx))
-          if  ((thisRecall_idx-thisRecall1_idx) > 1) 
+          if  ((thisRecall_idx-thisRecall1_idx) >= 1) 
                fprintf('iTestSample: %i \n',iTestSample);
      
           end
@@ -676,7 +684,61 @@
     rng(rngState);
 end
 
+   
+           % S_less_n = S_less - ds_all_less_mean;
+           % S_less_diff = diff(S_less);
+            
+%             ipositif_inv=sum(s_inv(:)==1);
+%             inegatif_inv=sum(s_inv(:)==-1);
+%             S_great_inv = s_inv; S_great_inv(S_great_inv<0) = 0; S_great_inv = S_great_inv.*ds_all_less_inv; S_great_inv_n = S_great_inv - ds_all_less_inv_mean; 
+%             S_less_inv = s_inv; S_less_inv(S_less_inv>0) = 0; S_less_inv = abs(S_less_inv).*ds_all_less_inv; S_less_inv_n = S_less_inv - ds_all_less_inv_mean;
+% 
+%             %  [S_less_min_inv, S_less_I_inv] = sort(S_less_inv(:));
+%             
+% 
+%            S_great_mean = sum(S_great(:)/ipositif); S_great_n_mean = sum(S_great_n(:)/ipositif);
+%            S_great_inv_mean = sum(S_great_inv(:)/ipositif_inv); S_great_inv_n_mean = sum(S_great_inv_n(:)/ipositif_inv);
+%            
+           
+           
+           
+%            S_less_mean = sum(sum(S_less/inegatif)); S_less_n_mean = sum(S_less_n(:)/inegatif);
+%            S_less_inv_mean = sum(S_less_inv(:)/inegatif_inv); S_less_inv_n_mean = sum(S_less_inv_n(:)/inegatif_inv);
+%           
+%              
+%            S_less_diff = diff(S_less); 
+%            S_less_n_diff = sum(sum(S_less_n.*diff_ds_all));
+%            S_less_inv_diff = sum(sum(S_less_inv.*diff_ds_all)); S_less_inv_n_diff = sum(sum(S_less_inv_n.*diff_ds_all));
+%           
+           
 
+           % subplot(2,2,3); h = heatmap(S_less.*diff_ds_all);
+           % subplot(2,2,4); h = heatmap(S_less_n.*diff_ds_all);
+            
+           % subplot(2,2,3); h = heatmap(S_less_inv);
+           % subplot(2,2,4); h = heatmap(S_less_inv_n);
+            
+           
+          
+          
+            
+            
+%             D = sum(sum(S_less(1:Top_boxes)));
+           %  boxes_per_less = (Top_boxes*Top_boxes)/inegatif;
+
+            
+         %   exp3_diff = diff2_ds_all*ds_pre_inv;
+          %  exp3_diff = ds_all(1:Top_boxes-2,:)-exp3_diff;
+           % exp3_diff = exp3_diff+D_diff;
+            
+%             deri_diff =  diff2_ds_all*ds_pre_inv;%diff2_ds_all*ds_pre_inv;%diff2_ds_all/ds_pre_inv;% diff_ds_all/ds_pre_inv; %diff2_ds_all*ds_pre_inv;
+       %     min_sless = min(S_less_diff(:));
+            
+         %       D_diff = ds_pre(i,1)+abs(D_diff - abs(min(S_less_diff(:))))*abs());
+                 
+            
+%                diff_s_less = diff(S_less);
+%                sol_1 = sum(diff_s_less(:));
 
 function plot_mat(A)
 lowestValue = min(A(A(:)>0));
