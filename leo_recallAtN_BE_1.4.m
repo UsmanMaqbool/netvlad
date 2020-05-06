@@ -28,7 +28,7 @@
 
     
      vt_type = 3;
- %iTestSample_Start=81; startfrom =8; show_output = 43;  %test the boxes
+% iTestSample_Start=43; startfrom =15; show_output = 43;  %test the boxes
   iTestSample_Start=1; startfrom =1; show_output =3;   
     %% LEO START
     
@@ -510,16 +510,16 @@
                  check_less_Values = nnz(values);
             end
             
-            if test_black < 100  && nnz(values) > 6
-               %  D_diff = D_diff+abs(sum(S3(:)));
+            if test_black < 100 
+                 D_diff = D_diff+abs(sum(S3(:)));
             end
                
-            if num_var_s5 <= 3 % && nnz(values) > 6 %&& num_var_s5 > 1   && nnz(values) > 6
+            if num_var_s5 < 3 && nnz(values) > 6 %&& num_var_s5 > 1   && nnz(values) > 6
                 D_diff = D_diff-mum_var_s5;
             
             end
               
-            if inegatif == 100  && num_var_s5 < 5 %&& nnz(values) > 6 % && min_check > 0.4
+            if inegatif == 100  && num_var_s5 < 5 && min_check > 0.4 && nnz(values) > 6
               D_diff = norm(D_diff-sum(S8(:))); 
             end
             

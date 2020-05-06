@@ -29,8 +29,8 @@
 
     
      vt_type = 3;
-iTestSample_Start=24; startfrom =6; show_output = 43;  %test the boxes
-  %   iTestSample_Start=24; startfrom =1; show_output =3;   
+ % iTestSample_Start=24; startfrom =6; show_output = 43;  %test the boxes
+   iTestSample_Start=1; startfrom =1; show_output =3;   
     %% LEO START
     
     netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
