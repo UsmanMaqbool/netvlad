@@ -1,5 +1,4 @@
-
-function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db)
+ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,plen_opts)
     if nargin<6, nSample= inf; end
     
     rngState= rng;
@@ -25,15 +24,15 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
     % detect blackish images  ( plot the boxes)
     % rearrange + use previous knowledge
     
-%==>> 15.000000 4.000000 1.000000 10.000000 2.000000 
 
     
-     vt_type = 3;
- %iTestSample_Start=81; startfrom =8; show_output = 43;  %test the boxes
-  iTestSample_Start=1; startfrom =1; show_output =3;   
+    vt_type = plen_opts.vt_type;
+    iTestSample_Start=plen_opts.iTestSample_Start; startfrom =plen_opts.startfrom; show_output = plen_opts.show_output;  %test the boxes
+     dataset_path = plen_opts.dataset_path; 
+     save_path = plen_opts.save_path; 
     %% LEO START
     
-    netID= 'vd16_tokyoTM_conv5_3_vlad_preL2_intra_white';
+    netID= plen_opts.netID;
     % netID= 'caffe_tokyoTM_conv5_vlad_preL2_intra_white';
 
 
@@ -48,7 +47,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
     
     
     
-    addpath(genpath('/mnt/02/docker_ws/docker_ws/netvlad/slen-0.2-box'));
+    %addpath(genpath('/mnt/02/docker_ws/docker_ws/netvlad/slen-0.2-box'));
     
     %% EDGE BOX
     %load pre-trained edge detection model and set opts (see edgesDemo.m)
@@ -64,7 +63,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
     gt=[111	98	25	101];
     opts.minBoxArea = 0.5*gt(3)*gt(4);
     opts.maxAspectRatio = 1.0*max(gt(3)/gt(4),gt(4)./gt(3));
-
+    num_box = 9; % Total = 10 (first one is the full images feature / box)
     
     
     Top_boxes = 10;
@@ -72,16 +71,8 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
     top_100 = [];
     total_top = 100; %100;
  
-    dataset_path = '/home/leo/docker_ws/datasets/Test_247_Tokyo_GSV';
-    
-   inegatif_i = [];
-    if vt_type == 2
-         save_path = '/home/leo/docker_ws/datasets/vt-2';
-
-    elseif vt_type == 3
-         save_path = '/home/leo/docker_ws/datasets/vt-4';
-    end
-    
+   
+  
  
 
     for iTestSample= iTestSample_Start:length(toTest)
@@ -99,7 +90,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
        
         %% Leo START
                 
-        qimg_path = strcat(dataset_path,'/query/', db.qImageFns{iTestSample, 1});  
+        qimg_path = strcat(dataset_path,'/queries/', db.qImageFns{iTestSample, 1});  
         q_img = strcat(save_path,'/', db.qImageFns{iTestSample, 1});  
         q_feat = strrep(q_img,'.jpg','.mat');
         
@@ -117,18 +108,18 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             imgg_mat_box_q = bbox;
             end
         else
-            %im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
+            im= vl_imreadjpeg({char(qimg_path)},'numThreads', 12); 
 
-           % I = uint8(im{1,1});
-            %[bbox, ~] =edgeBoxes(I,model);
+           I = uint8(im{1,1});
+            [bbox, E] =edgeBoxes(I,model);
             
-            [bbox,im, E, wd, hh] = img_Bbox(qimg_path,model);
+           % [bbox,im, E, wd, hh] = img_Bbox(qimg_path,model);
             
-          %  [wd, hh] = size(im{1,1});
+            [wd, hh] = size(im{1,1});
             mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
 
             im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-            query_full_feat= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
+            query_full_feat= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
             
             if vt_type == 2
             save(q_feat,'query_full_feat');
@@ -136,6 +127,10 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             end
             
             if vt_type == 3
+                check_folder = fileparts(q_feat);
+                if ~exist(check_folder, 'dir')
+                   mkdir(check_folder)
+                end
             save(q_feat,'query_full_feat', 'bbox', 'E');
             end
         end
@@ -155,21 +150,21 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             for jj = 1:total_top
 
                     db_img = strcat(dataset_path,'/images/', db.dbImageFns{ids(jj,1),1});  
-%                     im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
-%                     I = uint8(im{1,1});
-%                     [bbox, E] =edgeBoxes(I,model);
-                       
-                    [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
+                    im= vl_imreadjpeg({char(db_img)},'numThreads', 12); 
+                    I = uint8(im{1,1});
+                    [bbox, E] =edgeBoxes(I,model);
+                     [wd, hh] = size(im{1,1});   % update the size accordign to the DB images. as images have different sizes. 
+                  %  [bbox,im, E, wd, hh] = img_Bbox(db_img,model);
                    
                     mat_boxes = leo_slen_increase_boxes(bbox,wd,hh);
-
+                    
                     im= im{1}; % slightly convoluted because we need the full image path for `vl_imreadjpeg`, while `imread` is not appropriate - see `help computeRepresentation`
-                    feats= leo_computeRepresentation(net, im, mat_boxes); % add `'useGPU', false` if you want to use the CPU
+                    feats= leo_computeRepresentation(net, im, mat_boxes,num_box); % add `'useGPU', false` if you want to use the CPU
                     feats_file(jj) = struct ('featsdb', feats); 
                     bbox_file(jj) = struct ('bboxdb', bbox); 
                     Edge_images(jj) = struct ('Edges', E); 
                     clear feats;
-                    fprintf( '==>> %i ~ %i/%i ',jj,iTestSample,total_top );
+                    fprintf( '==>> %i ~ %i/%i ',iTestSample,jj,total_top );
 
             end
             
@@ -179,7 +174,13 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             end
             
             if vt_type == 3
+                check_folder = fileparts(q_dbfeat);
+                if ~exist(check_folder, 'dir')
+                   mkdir(check_folder)
+                end
                 save(q_dbfeat,'feats_file','bbox_file', 'Edge_images');
+                q_dbfeat_all = load(q_dbfeat);
+
             end
         end
         SLEN_top = zeros(total_top,2); 
@@ -232,7 +233,6 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
             
             ipositif=sum(s(:)==1);
             inegatif=sum(s(:)==-1);
-            inegatif_i=[inegatif_i ;inegatif];
             S_great = s; S_great(S_great<0) = 0; S_great = S_great.*ds_all_less; S_great_n = S_great - ds_all_less_mean;
             S_less = s; S_less(S_less>0) = 0; S_less = abs(S_less).*ds_all_less; S_less_n = S_less - ds_all_less_mean;
             S_less_diff = diff(S_less);
@@ -403,7 +403,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
                    end
                    
                    
-            end
+               end
                nnz_black_check = nnz(sum_diff2_ds_all);
                
                top_candidates = sum_diff2_ds_all;
@@ -419,60 +419,24 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
                     end
                    
                end
-               norms_Avg = 0;
-           min_check = abs(min(ds_all(:))-ds_pre_min); 
-           min_check_diff = abs(ds_pre(i,1)-ds_pre_min); 
+               if show_output == 45
+                 
+                [row,col,value] = find(diff_s_less~=0);
+                
+                q_imgg = imread(char(qimg_path));
+              
 
-           [row,col,value] = find(S3~=0);
-            if ~isempty(row) && ~isempty(imgg_mat_box_db) && ~isempty(imgg_mat_box_db)
+                db_imgg = imread(char(db_img));
+              
+                
+                qqq_img = q_imgg;
+                dbb_img = db_imgg;
                 
                 box_var_db = [];
                 box_var_q = [];
-                AAsum =[];
-                norms= [];
-                    if show_output == 43
-                        min_check
-                        min_check_diff
-                        inegatif
-                    q_imgg = imread(char(qimg_path));
-                    db_imgg = imread(char(db_img));
+                
+                        for jjj=1:length(row) %Top_boxes
 
-
-                    qqq_img = q_imgg;
-                    dbb_img = db_imgg;
-                    end
-                    %subplot(2,3,1);clf
-                    %  subplot(2,3,2);clf
-                    for jjj=1:length(row) %Top_boxes
-
-
-                        bb_q = imgg_mat_box_q(col(jjj),1:4);
-                       %  jjj
-                       % i
-                        box_var_q_i = [bb_q (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2] ;
-                        box_var_q = [box_var_q ; box_var_q_i];
-                        size(imgg_mat_box_db,2);
-                        % row(jjj);
-                        if  size(imgg_mat_box_db,1) < row(jjj)
-                            bb_db = imgg_mat_box_db(1,1:4);
-                        else
-                            bb_db = imgg_mat_box_db(row(jjj),1:4);
-                        end
-                        box_var_db_i = [bb_db (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2];
-                        box_var_db = [box_var_db ; box_var_db_i ];
-
-
-
-                        A = [box_var_db_i ; box_var_q_i];
-                        %  norms_sum = norms+cellfun(@norm,num2cell(A,1));
-
-                        norms = cellfun(@norm,num2cell(A,1));
-
-                        %   AA = [norm(A(1,1:2),2) norm(A(1,3:4),2) norm(A(1,5:6),2) ];
-
-                        AA = abs(box_var_q_i - box_var_db_i);
-                        AAsum = [AAsum ;AA];
-                        if show_output == 43
                             qq_img = draw_boxx(q_imgg,imgg_mat_box_q(col(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
                             dd_img = draw_boxx(db_imgg,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
 
@@ -480,47 +444,33 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
                             dbb_img = draw_boxx(dbb_img,imgg_mat_box_db(row(jjj),1:4));%   q_RGB = insertShape(I,'Rectangle',imgg_mat_box_q(row(jjj),1:4),'LineWidth',3);
 
 
-                            %  subplot(2,2,1); imshow(qq_img); %q_img
-                            %  subplot(2,2,2); imshow(dd_img); %
+                            bb_q = imgg_mat_box_q(col(jjj),1:4);
 
-                            subplot(2,3,1); hold on; plot(box_var_q(jjj,:), 'ro-'); 
+                            box_var_q = [box_var_q ; imgg_mat_box_q(col(jjj),1:4) (bb_q(3)+bb_q(1))/2 (bb_q(4)+bb_q(2))/2 ];
 
-                            subplot(2,3,2); hold on; plot(box_var_db(jjj,:), 'ro-'); 
+                            bb_db = imgg_mat_box_db(row(jjj),1:4);
 
-                            std_box_var_q = std(im2double(box_var_q_i),0,1);
-                            % subplot(2,3,1); bar(std_box_var_q); %q_img
-                            std_box_var_db = std(im2double(box_var_db_i),0,1);
-                            % subplot(2,3,2); bar(std_box_var_db); %q_img
+                            box_var_db = [box_var_db ; imgg_mat_box_db(row(jjj),1:4) (bb_db(3)+bb_db(1))/2 (bb_db(4)+bb_db(2))/2 ];
+                          %  subplot(2,2,1); imshow(qq_img); %q_img
+                          %  subplot(2,2,2); imshow(dd_img); %
 
 
-
-                            subplot(2,3,3); bar(norms); %q_img
-                            subplot(2,3,4); imshow(qqq_img); %q_img
-                            subplot(2,3,5); imshow(dbb_img); %
-                            subplot(2,3,6); bar(mean(AAsum,1)); %q_img
 
                         end
-
-                    end
-                    
-                norms_Avg = inegatif/mean(norms(1,3:4));
-                box_width_height = box_var_db(:,3:4);
-                test_black = mean(box_width_height(:));
+                std_box_var_q = std(im2double(box_var_q),0,1);
+                subplot(2,2,1); bar(std_box_var_q); %q_img
+                std_box_var_db = std(im2double(box_var_db),0,1);
+                subplot(2,2,2); bar(std_box_var_db); %q_img
                 
-                 [roww,coll,values] = find(box_width_height<test_black);
-                 check_less_Values = nnz(values);
-            end
-            
-            if test_black < 100  && nnz(values) > 6
-                D_diff = D_diff+abs(sum(S3(:)));
-            end
+                  subplot(2,2,3); imshow(qqq_img); %q_img
+                    subplot(2,2,4); imshow(dbb_img); %
+                end  
                
-            if num_var_s5 < 3 && num_var_s5 > 1 % && nnz(values) > 6 %  && nnz(values) > 6
+            if num_var_s5 < 3 
                 D_diff = D_diff-mum_var_s5;
-            
             end
               
-            if inegatif == 100  && num_var_s5 < 5 %&& nnz(values) > 6 % && min_check > 0.4
+            if inegatif == 100  && num_var_s5 < 5 
               D_diff = norm(D_diff-sum(S8(:))); 
             end
             
@@ -555,11 +505,8 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
           
         [C c_i] = sortrows(ds_new_top);
         idss = ids;
-        inegatifss = inegatif_i;
         for i=1:total_top
             idss(i,1) = ids(c_i(i,1));
-            inegatifss(i,1) = inegatif_i(c_i(i,1));
-
         end
          if show_output == 3
 
@@ -636,33 +583,11 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
         
         thisRecall_idx = find(thisRecall~=0, 1, 'first');
         thisRecall1_idx = find(thisRecall1~=0, 1, 'first');
-        fprintf('PLEN Recall: %i and Original Recall: %i \n',thisRecall_idx, thisRecall1_idx );
-        if ~(isempty(thisRecall_idx) && isempty(thisRecall1_idx))
-          if  ((thisRecall_idx-thisRecall1_idx) > 1) 
-               fprintf('iTestSample: %i \n',iTestSample);
-     
-          end
+        
+        if thisRecall_idx-thisRecall1_idx > 1
+           fprintf('iTestSample: %i \n',iTestSample);
         end
-        if show_output == 45
-               fprintf('iTestSample: %i \n',iTestSample);
-               figure;
-               subplot(2,2,1);
-               plot(box_var_db(c_i(1,1),:), 'ro-'); hold on
-               plot(box_var_db(c_i(2,1),:), 'ro-'); hold on
-               plot(box_var_db(c_i(3,1),:), 'ro-'); hold on
-               plot(box_var_db(c_i(4,1),:), 'ro-'); hold on
-               plot(box_var_db(c_i(5,1),:), 'ro-'); hold on
-               plot(box_var_db(c_i(thisRecall_idx,1),:), 'go-'); hold on
-               plot(box_var_db(thisRecall1_idx,:), 'bo-'); hold on
-                subplot(2,2,2);imshow(imread(char(qimg_path)));
-
-                 subplot(2,2,3);  
-                 db_imgo1 = strcat(dataset_path,'/images/', db.dbImageFns{ids(c_i(thisRecall_idx,1),1),1});  
-                 imshow(imread(char(db_imgo1))); %
-                  subplot(2,2,4);  
-                 db_imgo2 = strcat(dataset_path,'/images/', db.dbImageFns{ids(thisRecall1_idx,1),1});  
-                 imshow(imread(char(db_imgo2))); %
-        end
+        
         if thisRecall(1) == 0
           fprintf('iTestSample: %i \n',iTestSample);
   %           plot(ns, recalls(1:iTestSample,:), 'ro-',ns, recalls_ori(1:iTestSample,:), 'go-'); grid on; xlabel('N'); ylabel('Recall@N'); title('Tokyo247 HYBRID Edge Image', 'Interpreter', 'none');
@@ -680,7 +605,61 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
     rng(rngState);
 end
 
+   
+           % S_less_n = S_less - ds_all_less_mean;
+           % S_less_diff = diff(S_less);
+            
+%             ipositif_inv=sum(s_inv(:)==1);
+%             inegatif_inv=sum(s_inv(:)==-1);
+%             S_great_inv = s_inv; S_great_inv(S_great_inv<0) = 0; S_great_inv = S_great_inv.*ds_all_less_inv; S_great_inv_n = S_great_inv - ds_all_less_inv_mean; 
+%             S_less_inv = s_inv; S_less_inv(S_less_inv>0) = 0; S_less_inv = abs(S_less_inv).*ds_all_less_inv; S_less_inv_n = S_less_inv - ds_all_less_inv_mean;
+% 
+%             %  [S_less_min_inv, S_less_I_inv] = sort(S_less_inv(:));
+%             
+% 
+%            S_great_mean = sum(S_great(:)/ipositif); S_great_n_mean = sum(S_great_n(:)/ipositif);
+%            S_great_inv_mean = sum(S_great_inv(:)/ipositif_inv); S_great_inv_n_mean = sum(S_great_inv_n(:)/ipositif_inv);
+%            
+           
+           
+           
+%            S_less_mean = sum(sum(S_less/inegatif)); S_less_n_mean = sum(S_less_n(:)/inegatif);
+%            S_less_inv_mean = sum(S_less_inv(:)/inegatif_inv); S_less_inv_n_mean = sum(S_less_inv_n(:)/inegatif_inv);
+%           
+%              
+%            S_less_diff = diff(S_less); 
+%            S_less_n_diff = sum(sum(S_less_n.*diff_ds_all));
+%            S_less_inv_diff = sum(sum(S_less_inv.*diff_ds_all)); S_less_inv_n_diff = sum(sum(S_less_inv_n.*diff_ds_all));
+%           
+           
 
+           % subplot(2,2,3); h = heatmap(S_less.*diff_ds_all);
+           % subplot(2,2,4); h = heatmap(S_less_n.*diff_ds_all);
+            
+           % subplot(2,2,3); h = heatmap(S_less_inv);
+           % subplot(2,2,4); h = heatmap(S_less_inv_n);
+            
+           
+          
+          
+            
+            
+%             D = sum(sum(S_less(1:Top_boxes)));
+           %  boxes_per_less = (Top_boxes*Top_boxes)/inegatif;
+
+            
+         %   exp3_diff = diff2_ds_all*ds_pre_inv;
+          %  exp3_diff = ds_all(1:Top_boxes-2,:)-exp3_diff;
+           % exp3_diff = exp3_diff+D_diff;
+            
+%             deri_diff =  diff2_ds_all*ds_pre_inv;%diff2_ds_all*ds_pre_inv;%diff2_ds_all/ds_pre_inv;% diff_ds_all/ds_pre_inv; %diff2_ds_all*ds_pre_inv;
+       %     min_sless = min(S_less_diff(:));
+            
+         %       D_diff = ds_pre(i,1)+abs(D_diff - abs(min(S_less_diff(:))))*abs());
+                 
+            
+%                diff_s_less = diff(S_less);
+%                sol_1 = sum(diff_s_less(:));
 
 function plot_mat(A)
 lowestValue = min(A(A(:)>0));
@@ -719,38 +698,7 @@ end
 
 function img = draw_boxx(I,bb)
 
-%bb(1)
-%bb(2)
-%bb(3)+bb(1)
-%bb(4)+bb(2)
-
 bb=[bb(1) bb(2) bb(3)+bb(1) bb(4)+bb(2)];
-%bb
-% 
-% y1 = bb(1)+3;
-% y2 = bb(1)+bb(3)-3;
-% x1 = bb(2)+3;
-% x2 = bb(2)+bb(4)-3;
-% 
-% if x1 == 0
-%     x1 = 1;
-% end
-% if y1 == 0
-%     y1 = 1;
-% end
-% if x2 > 30
-%     x2 = 30;
-% end
-% if y2 > 40
-%     y2 = 40;
-% end
-% if bboxes(3) < 2 && x2 > 30
-%     x1 = x1-2;
-% end
-% if bboxes(4) < 2 && y2 > 40
-%     y1 = y1-2;
-% end
-
 
 img = insertShape(I,'Rectangle',bb,'LineWidth',3);
 

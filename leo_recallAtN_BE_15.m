@@ -1,5 +1,4 @@
-
-function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db)
+ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nSample,db,q_feat, db_feat)
     if nargin<6, nSample= inf; end
     
     rngState= rng;
@@ -79,7 +78,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
          save_path = '/home/leo/docker_ws/datasets/vt-2';
 
     elseif vt_type == 3
-         save_path = '/home/leo/docker_ws/datasets/vt-4';
+         save_path = '/home/leo/docker_ws/datasets/vt-3';
     end
     
  
@@ -515,7 +514,7 @@ function [res, recalls]= leo_recallAtN(searcher, nQueries, isPos, ns, printN, nS
                 D_diff = D_diff+abs(sum(S3(:)));
             end
                
-            if num_var_s5 < 3 && num_var_s5 > 1 % && nnz(values) > 6 %  && nnz(values) > 6
+            if num_var_s5 < 3 % && nnz(values) > 6 %&& num_var_s5 > 1   && nnz(values) > 6
                 D_diff = D_diff-mum_var_s5;
             
             end
